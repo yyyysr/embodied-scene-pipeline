@@ -29,7 +29,7 @@
 
 ## Milestone 4 — simulation semantics
 
-- [ ] Add separate USD authoring package
-- [ ] Define physics specification schema
-- [ ] Author bodies, colliders, joints, mass, friction, and damping
-- [ ] Validate in the selected simulator
+- [x] Add separate USD authoring package
+- [x] Define physics specification schema
+- [x] Author bodies, colliders, joints, mass, friction, and joint drive damping
+- [ ] User validates exported scenes in Isaac Sim

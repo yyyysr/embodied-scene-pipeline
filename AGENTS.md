@@ -10,7 +10,8 @@ Build reproducible Blender scenes for embodied-AI tasks from text and optional r
 - Keep task semantics separate from scene appearance.
 - Use Blender Python as the primary modeling interface.
 - Treat Blender MCP as optional escalation for live inspection.
-- Do not implement USD physics authoring yet; preserve export boundaries only.
+- Export geometry with Blender’s native USD exporter; author physics downstream with pxr.
+- Read `docs/usd-physics.md` for the physics contract. Isaac Sim dynamic validation is performed by the user; never report it as passed from static checks.
 
 ## Required workflow
 
@@ -58,3 +59,14 @@ Build reproducible Blender scenes for embodied-AI tasks from text and optional r
 - Never make an MCP-only correction. Reproduce every accepted change in YAML or Python.
 - Do not commit generated workspaces, `.blend` files, renders, caches, or provider downloads.
 - Run relevant tests and schema validation after changes.
+
+## Delivery and output discipline
+
+- The default build continues through native USD export and pxr physics authoring.
+  Geometry-only work is an explicit exception. Read docs/usd-physics.md.
+- Deliver exports/scene.usdc and its referenced textures only. Keep semantic names,
+  parent hierarchy and formal lighting. Prepare physics semantics during modeling.
+- Keep one review/report.json; no default hashes, manifests, duplicate JSON scene
+  data, backup exports or review iteration archives. Inspect the final USD directly.
+- Intermediates belong in memory or temporary directories. Retain debug files only
+  for a concrete investigation; create optional directories on demand.

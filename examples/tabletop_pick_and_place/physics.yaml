@@ -1,0 +1,21 @@
+version: 1
+materials:
+  default: {static_friction: 0.5, dynamic_friction: 0.4, restitution: 0.0}
+default_material: default
+bodies:
+  - id: tabletop
+    object: tabletop
+    type: static
+    colliders: [{object: tabletop, approximation: none}]
+  - id: red_cup
+    object: red_cup
+    type: dynamic
+    mass_kg: 0.2
+    colliders: [{object: red_cup, approximation: convexHull}]
+  - id: blue_tray
+    object: blue_tray
+    type: dynamic
+    mass_kg: 0.3
+    colliders: [{object: blue_tray, approximation: convexHull}]
+joints: []
+# This baseline example models solid primitives, not a hollow cup/tray.

@@ -47,18 +47,6 @@ def reset_scene() -> None:
     bpy.context.scene.unit_settings.scale_length = 1.0
 
 
-def next_review_directory(output_workspace: Path) -> Path:
-    review_root = output_workspace / "review"
-    review_root.mkdir(parents=True, exist_ok=True)
-    indices = []
-    for path in review_root.glob("iteration_*"):
-        try:
-            indices.append(int(path.name.removeprefix("iteration_")))
-        except ValueError:
-            continue
-    return review_root / f"iteration_{max(indices, default=0) + 1:03d}"
-
-
 def main() -> None:
     args = parse_args()
     runtime_spec_path = args.scene_spec.resolve()
@@ -68,10 +56,9 @@ def main() -> None:
         if args.source_workspace
         else runtime_spec_path.parent.parent
     )
-    source_spec_path = args.source_spec.resolve() if args.source_spec else runtime_spec_path
     output_workspace = args.output.resolve() if args.output else source_workspace
     build_directory = output_workspace / "build"
-    review_directory = next_review_directory(output_workspace)
+    review_directory = output_workspace / "review"
     build_directory.mkdir(parents=True, exist_ok=True)
     review_directory.mkdir(parents=True, exist_ok=True)
 
@@ -92,7 +79,10 @@ def main() -> None:
 
     structure_contract = context.structure_contract()
     structure_contract_path = build_directory / "structure_contract.json"
-    structure_contract_path.write_text(json.dumps(structure_contract, indent=2), encoding="utf-8")
+    if structure_contract["rooms"]:
+        structure_contract_path.write_text(
+            json.dumps(structure_contract, indent=2), encoding="utf-8"
+        )
     cameras = add_review_cameras(spec)
     add_review_lighting()
     report = validate_scene(
@@ -153,27 +143,8 @@ def main() -> None:
         },
     }
     (review_directory / "report.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    bpy.context.preferences.filepaths.save_version = 0
     bpy.ops.wm.save_as_mainfile(filepath=str(build_directory / "scene.blend"))
-    (build_directory / "build_manifest.json").write_text(
-        json.dumps(
-            {
-                "scene_id": spec["id"],
-                "scene_spec": str(source_spec_path),
-                "source_workspace": str(source_workspace),
-                "output_workspace": str(output_workspace),
-                "build_mode": implementation["mode"],
-                "source_script": implementation.get("script"),
-                "structure_contract": str(structure_contract_path),
-                "review": str(review_directory),
-                "background_mode": (spec.get("world") or {}).get("background_mode", "none"),
-                "background_asset": (spec.get("world") or {}).get("background_asset"),
-                "background_input": (spec.get("world") or {}).get("background_input"),
-                "environment_image": (spec.get("world") or {}).get("environment_image"),
-            },
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
 
 
 if __name__ == "__main__":

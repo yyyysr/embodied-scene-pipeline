@@ -30,6 +30,14 @@ The Scene Director owns the global scene contract and integration. A Structure A
 
 MCP is optional. The baseline loop works headlessly: build, validate, add diagnostic camera/light rigs, render several views, write `report.json`, inspect, repair source, and rebuild. MCP may be used when screenshots and reports are insufficient, but accepted changes must be synchronized back to source.
 
-## Deferred layer
+## USD and physics layer
 
-Physics authoring with `pxr`/`usd-core` will be a separate downstream phase. It will eventually configure rigid/dynamic bodies, collision shapes, joints, mass, friction, and damping after modeling is stable. This repository currently reserves export boundaries without implementing those attributes.
+Blender's native USD exporter writes geometry, transforms, and supported materials.
+Host-side `pxr` uses a separate `physics.yaml` specification to author colliders,
+bodies, masses, physics materials, and joints in an independent USD layer.
+The pipeline combines layers internally and delivers one `scene.usdc` with referenced
+textures. Intermediates are temporary; one review/report.json summarizes checks.
+No default hash/manifest outputs. Read `docs/usd-physics.md`.
+The pipeline performs static checks only. Isaac Sim loading, visual inspection,
+contacts, stability, and dynamic motion are checked by the user; reports record
+`pending_user` until the user supplies independent evidence.

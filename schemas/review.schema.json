@@ -6,6 +6,12 @@
   "required": ["scene_id", "status", "checks", "findings"],
   "properties": {
     "scene_id": {"type": "string"},
+    "usd": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {"status": {"enum": ["pass", "fail"]}},
+      "additionalProperties": true
+    },
     "status": {"type": "string", "enum": ["pass", "needs_repair", "error"]},
     "checks": {"type": "object", "additionalProperties": {"type": "boolean"}},
     "task_checks": {

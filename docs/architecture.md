@@ -7,7 +7,10 @@
 3. **Modeling source**: Blender Python generated or edited by agents.
 4. **Build products**: `.blend`, meshes, textures, and provider outputs.
 5. **Review evidence**: diagnostic renders and machine-readable reports.
-6. **Exports**: interchange formats for later simulation and USD physics authoring.
+6. **Exports**: native Blender geometry and in-memory pxr physics combined into
+   one scene.usdc plus referenced textures. Temporary interchange is cleaned up;
+   final-file checks merge into review/report.json.
+7. **User validation**: Isaac Sim visual and dynamic checks performed by the user.
 
 ## Key boundary
 

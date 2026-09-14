@@ -62,7 +62,12 @@ def validate_scene(
         if obj.get("semantic_role") == "task"
     }
     missing_articulation = []
-    for semantic_id in sorted(task_ids):
+    # A manipulated object can be a free body (cup, tray), not an articulation.
+    # Joint requirements are checked against physics.yaml in the USD phase.
+    required_articulations = {
+        obj.get("semantic_id") for obj in semantic_objects if obj.get("requires_articulation")
+    }
+    for semantic_id in sorted(required_articulations):
         related = [
             obj
             for obj in bpy.data.objects

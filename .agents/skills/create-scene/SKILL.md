@@ -27,6 +27,15 @@ description: Create or rebuild an embodied-AI Blender scene from a task descript
 8. Delegate only when the component boundary and output contract are explicit.
 9. Generate Blender Python under the workspace `source/` directory.
 10. Build from a clean scene and save generated results under `build/`.
-11. Invoke the `review-scene` skill before accepting the result.
+11. Prepare `specs/physics.yaml` and physical assembly hierarchy during modeling,
+    following `docs/usd-physics.md`. Give colliders and anchors stable semantic IDs;
+    preserve cavities and distinguish installed fixtures from movable assets.
+12. Invoke `review-scene` for geometry/visual review, then `export-scene` for final
+    USD delivery. The shared run_blender.py command runs build and export together;
+    use --geometry-only only when the user requests that boundary.
 
 Keep diagnostic cameras and lights separate from final scene lighting. Never make generated `.blend` state the only copy of an accepted modeling decision.
+
+Create directories only when needed. Do not add hashes, duplicate JSON scene
+representations or permanent intermediates. Default output is governed by
+`docs/usd-physics.md`; keep formal scene lighting outside __REVIEW__.

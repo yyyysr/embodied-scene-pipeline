@@ -1,0 +1,263 @@
+{
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1
+    },
+    "gravity": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "materials": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "static_friction": {
+            "type": "number",
+            "minimum": 0
+          },
+          "dynamic_friction": {
+            "type": "number",
+            "minimum": 0
+          },
+          "restitution": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "static_friction",
+          "dynamic_friction",
+          "restitution"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "default_material": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "bodies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "object": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "type": {
+            "enum": [
+              "static",
+              "dynamic",
+              "kinematic"
+            ]
+          },
+          "mass_kg": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "material": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "colliders": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "object": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "approximation": {
+                  "enum": [
+                    "none",
+                    "convexHull",
+                    "boundingCube",
+                    "boundingSphere"
+                  ]
+                },
+                "material": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                },
+                "hide_visual": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "object",
+                "approximation"
+              ],
+              "additionalProperties": false
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "id",
+          "object",
+          "type",
+          "colliders"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "dynamic",
+                    "kinematic"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "mass_kg"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "joints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "type": {
+            "enum": [
+              "fixed",
+              "revolute",
+              "prismatic"
+            ]
+          },
+          "body0": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "body1": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "anchor": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "axis": {
+            "enum": [
+              "X",
+              "Y",
+              "Z"
+            ]
+          },
+          "limits": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "collision_enabled": {
+            "type": "boolean"
+          },
+          "drive": {
+            "type": "object",
+            "properties": {
+              "stiffness": {
+                "type": "number",
+                "minimum": 0
+              },
+              "damping": {
+                "type": "number",
+                "minimum": 0
+              },
+              "max_force": {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              "target_position": {
+                "type": "number"
+              },
+              "target_velocity": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "stiffness",
+              "damping",
+              "max_force"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "body1",
+          "anchor"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "type": {
+                  "enum": [
+                    "revolute",
+                    "prismatic"
+                  ]
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "axis",
+                "limits"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "visual_only": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      }
+    }
+  },
+  "required": [
+    "version",
+    "materials",
+    "default_material",
+    "bodies",
+    "joints"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

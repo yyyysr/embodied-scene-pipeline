@@ -1,0 +1,56 @@
+version: 1
+gravity: [0, 0, -9.81]
+materials:
+  default: {static_friction: 0.5, dynamic_friction: 0.5, restitution: 0.0}
+default_material: default
+bodies:
+  - id: floor
+    object: floor
+    type: static
+    colliders: [{object: floor, approximation: none}]
+  - id: wall
+    object: wall
+    type: static
+    colliders: [{object: wall, approximation: none}]
+  - id: cabinet
+    object: cabinet
+    type: static
+    colliders: [{object: cabinet, approximation: none}]
+  - id: door
+    object: door
+    type: dynamic
+    mass_kg: 5
+    colliders: [{object: door_panel, approximation: convexHull}]
+  - id: drawer
+    object: drawer
+    type: dynamic
+    mass_kg: 1.5
+    colliders:
+      - {object: drawer_bottom, approximation: convexHull}
+      - {object: drawer_left, approximation: convexHull}
+      - {object: drawer_right, approximation: convexHull}
+      - {object: drawer_front, approximation: convexHull}
+      - {object: drawer_back, approximation: convexHull}
+  - id: free_box
+    object: free_box
+    type: dynamic
+    mass_kg: 0.5
+    colliders: [{object: free_shape, approximation: convexHull}]
+joints:
+  - id: door_hinge
+    type: revolute
+    body0: wall
+    body1: door
+    anchor: door_anchor
+    axis: Z
+    limits: [-90, 0]
+    drive: {stiffness: 0, damping: 1, max_force: 20}
+  - id: drawer_slide
+    type: prismatic
+    body0: cabinet
+    body1: drawer
+    anchor: drawer_anchor
+    axis: Y
+    limits: [-0.25, 0]
+    drive: {stiffness: 0, damping: 10, max_force: 20}
+visual_only: []

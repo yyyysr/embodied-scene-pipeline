@@ -1,0 +1,15 @@
+version: 1
+# All lengths are meters; revolute limits/targets are degrees. Z-up.
+gravity: [0, 0, -9.81]
+materials:
+  default:
+    static_friction: 0.5
+    dynamic_friction: 0.5
+    restitution: 0.0
+default_material: default
+# References below use registered Blender semantic IDs, not guessed USD paths.
+# Each dynamic body must have a distinct root with its collider descendants.
+bodies: []
+joints: []
+# Explicitly list semantic roots intended only for appearance.
+visual_only: []

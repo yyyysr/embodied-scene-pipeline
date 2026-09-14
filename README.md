@@ -16,7 +16,8 @@ Agent-native pipeline for building embodied-AI scenes with Blender. The first mi
   `docs/generated-assets.md`.
 - Optional tabletop visual backgrounds can use a Codex image edit or FAL clean
   plate followed by World Labs; see `docs/background-generation.md`.
-- USD physics authoring is intentionally deferred.
+- Native Blender USD export and separate `pxr` physics authoring with static checks;
+  Isaac Sim dynamic checks are performed by the user. See [USD workflow](docs/usd-physics.md).
 
 ## Quick start
 
@@ -24,7 +25,11 @@ Agent-native pipeline for building embodied-AI scenes with Blender. The first mi
 2. Create a virtual environment and run `pip install -e '.[dev]'`.
 3. Export `BLENDER_BIN` if Blender is not on `PATH`.
 4. Run `python scripts/init_workspace.py tabletop_demo`.
-5. Run `python scripts/run_blender.py workspaces/tabletop_demo/specs/scene.yaml`.
+5. Fill scene/task/physics YAML and the modeling source, then run
+   `python scripts/run_blender.py workspaces/tabletop_demo/specs/scene.yaml`.
+   This builds, reviews and delivers `exports/scene.usdc` plus textures.
+   For an existing modeled scene use `python scripts/export_scene.py workspaces/<id>`.
+   `--geometry-only` explicitly stops before USD; `--debug` retains USD intermediates.
 
 For an irregular or image-derived environment, keep uncertain rooms in draft
 form, declare a `blender_script` implementation, and let the structure source

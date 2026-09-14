@@ -5,21 +5,7 @@ from pathlib import Path
 
 from .config import repository_root
 
-WORKSPACE_DIRECTORIES = (
-    "input/references",
-    "specs/rooms",
-    "specs/assets",
-    "source/structure",
-    "source/rooms",
-    "source/assets",
-    "generated_assets/meshes",
-    "generated_assets/textures",
-    "generated_assets/backgrounds",
-    "build",
-    "review",
-    "exports",
-    "logs",
-)
+WORKSPACE_DIRECTORIES = ("input", "specs", "source", "build", "review", "exports")
 
 
 def create_workspace(scene_id: str, root: Path | None = None, force: bool = False) -> Path:
@@ -37,6 +23,7 @@ def create_workspace(scene_id: str, root: Path | None = None, force: bool = Fals
     templates = repository / "templates"
     shutil.copy2(templates / "task.yaml", workspace / "specs" / "task.yaml")
     shutil.copy2(templates / "scene.yaml", workspace / "specs" / "scene.yaml")
+    shutil.copy2(templates / "physics.yaml", workspace / "specs" / "physics.yaml")
     shutil.copy2(templates / "build_scene.py", workspace / "source" / "build_scene.py")
     (workspace / "input" / "prompt.md").write_text(
         "# Original request\n\nReplace this text with the user's unmodified request.\n",
