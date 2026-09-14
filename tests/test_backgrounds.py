@@ -4,6 +4,10 @@ from pathlib import Path
 from blender_runtime.backgrounds import validate_background
 from embodied_scene.backgrounds import decide_tabletop_background, next_background_iteration
 from embodied_scene.integrations.environment import load_env_file
+from embodied_scene.integrations.generation_3d import (
+    latest_asset_reference,
+    select_asset_iteration,
+)
 
 
 def test_background_policy_skips_unrequested_semantic_tabletop() -> None:
@@ -41,6 +45,31 @@ def test_background_policy_skips_infeasible_cleanup() -> None:
 def test_background_iterations_do_not_overwrite(tmp_path: Path) -> None:
     assert next_background_iteration(tmp_path).name == "iteration_001"
     assert next_background_iteration(tmp_path).name == "iteration_002"
+
+
+def test_asset_iteration_advances_only_for_explicit_completed_regeneration(
+    tmp_path: Path,
+) -> None:
+    first = select_asset_iteration(tmp_path, "mug")
+    assert first.name == "iteration_001"
+    assert select_asset_iteration(tmp_path, "mug") == first
+    assert select_asset_iteration(tmp_path, "mug", regenerate=True) == first
+
+    (first / "asset.glb").write_bytes(b"candidate")
+    assert select_asset_iteration(tmp_path, "mug") == first
+    second = select_asset_iteration(tmp_path, "mug", regenerate=True)
+    assert second.name == "iteration_002"
+    assert select_asset_iteration(tmp_path, "mug", regenerate=True) == second
+    assert select_asset_iteration(tmp_path, "chair").name == "iteration_001"
+
+
+def test_latest_asset_reference_can_be_reused_across_model_iterations(tmp_path: Path) -> None:
+    first = select_asset_iteration(tmp_path, "mug")
+    reference = first / "reference.png"
+    reference.write_bytes(b"reference")
+    (first / "asset.glb").write_bytes(b"candidate")
+    select_asset_iteration(tmp_path, "mug", regenerate=True)
+    assert latest_asset_reference(tmp_path, "mug") == reference
 
 
 def test_selected_background_files_are_checked(tmp_path: Path) -> None:

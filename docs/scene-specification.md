@@ -45,6 +45,23 @@ geometry are synchronized into the accepted specification after review.
 
 Task objects require explicit dimensions, initial transforms, and semantic roles. Preserve free space around grasps, doors, drawers, robot bases, and navigation paths. Decorative objects may use looser constraints.
 
+Generated asset candidates use non-overwriting iteration directories only when
+an explicit regeneration follows a completed candidate. Ordinary reruns reuse
+the current result and interrupted requests resume in place. After Blender
+normalization and review, an accepted asset records its local GLB:
+
+```yaml
+id: ceramic_mug
+role: task
+modeling_method: generated_3d
+source_file: generated_assets/meshes/ceramic_mug/iteration_001/asset.glb
+dimensions: [0.11, 0.08, 0.10]
+position: [0.0, 0.0, 0.8]
+```
+
+The provider file is never authoritative for scale, collision, or articulation.
+See `docs/generated-assets.md`.
+
 ## Optional static backgrounds
 
 The `world` mapping records a resolved background decision, not an automatic

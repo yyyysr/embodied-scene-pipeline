@@ -97,3 +97,29 @@ def test_3dgs_scene_requires_input_and_local_spz(tmp_path: Path) -> None:
     }
     with pytest.raises(ValidationError):
         _validate_scene(tmp_path, scene)
+
+
+def test_generated_asset_requires_accepted_local_glb(tmp_path: Path) -> None:
+    valid = {
+        "id": "generated_scene",
+        "environment": "tabletop",
+        "objects": [
+            {
+                "id": "ceramic_mug",
+                "role": "context",
+                "modeling_method": "generated_3d",
+                "source_file": (
+                    "generated_assets/meshes/ceramic_mug/iteration_001/asset.glb"
+                ),
+            }
+        ],
+        "implementation": {
+            "mode": "blender_script",
+            "script": "source/build_scene.py",
+            "entrypoint": "build_scene",
+        },
+    }
+    assert _validate_scene(tmp_path, valid)["objects"][0]["source_file"].endswith("asset.glb")
+    del valid["objects"][0]["source_file"]
+    with pytest.raises(ValidationError):
+        _validate_scene(tmp_path, valid)

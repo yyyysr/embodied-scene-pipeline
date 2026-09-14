@@ -6,22 +6,47 @@ from typing import Protocol
 
 
 @dataclass(frozen=True)
-class CleanPlateRequest:
+class ImageEditRequest:
     source_image: Path
     prompt: str
     output_directory: Path
     mask_image: Path | None = None
+    output_filename: str = "clean_plate.png"
+    state_filename: str = ".clean_plate.request.json"
 
 
 @dataclass(frozen=True)
-class CleanPlateResult:
+class ImageEditResult:
     image_path: Path
     provider: str
     model: str
 
 
 class ImageEditingProvider(Protocol):
-    def create_clean_plate(self, request: CleanPlateRequest) -> CleanPlateResult: ...
+    def edit(self, request: ImageEditRequest) -> ImageEditResult: ...
+
+
+@dataclass(frozen=True)
+class ImageGenerationRequest:
+    prompt: str
+    output_directory: Path
+    output_filename: str = "reference.png"
+    state_filename: str = ".reference.request.json"
+
+
+@dataclass(frozen=True)
+class ImageGenerationResult:
+    image_path: Path
+    provider: str
+    model: str
+
+
+class ImageGenerationProvider(Protocol):
+    def generate(self, request: ImageGenerationRequest) -> ImageGenerationResult: ...
+
+
+CleanPlateRequest = ImageEditRequest
+CleanPlateResult = ImageEditResult
 
 
 def validate_image_input(path: Path) -> Path:

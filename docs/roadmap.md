@@ -23,7 +23,7 @@
 - [x] Add FAL clean-plate adapters for Nano Banana and GPT Image 2 aliases
 - [x] Add resumable World Labs generation with local SPZ outputs
 - [x] Record accepted backgrounds without a background-specific manifest
-- [ ] Add one 3D-generation adapter
+- [x] Add resumable Hunyuan3D text and generated-reference asset routes
 - [ ] Add asset normalization and quality checks
 - [ ] Add direct SPZ visual review and explicit-asset alignment
 

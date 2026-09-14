@@ -15,7 +15,12 @@ description: Create or rebuild an embodied-AI Blender scene from a task descript
    or configured FAL editor to create `clean_plate.png`, visually accept it, and
    only then call the World Labs helper. Never overwrite the original reference.
 5. Assign stable semantic identifiers to rooms, surfaces, objects, and task entities.
-6. Select modeling paths using `docs/asset-strategy.md`.
+6. Select modeling paths using `docs/asset-strategy.md`. When one complex asset
+   is routed to FAL Hunyuan3D, read `docs/generated-assets.md` and choose direct
+   text-to-3D, a text-generated single-object reference, or generative editing
+   of a source image. Do not add a segmentation pipeline. Visually accept any
+   generated `reference.png` before the image-to-3D call, and treat `asset.glb`
+   as unreviewed until it is normalized and validated in Blender.
 7. For a multi-room architectural interior, read
    [references/interior-modeling.md](references/interior-modeling.md) before
    authoring the structure, openings, or articulated casework.

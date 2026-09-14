@@ -19,3 +19,16 @@ background_generation:
     model: marble-1.1
     poll_interval_seconds: 15
     timeout_seconds: 1800
+asset_generation:
+  provider: hunyuan
+  reference_image:
+    fal_provider: nano-banana
+  hunyuan:
+    text_endpoint: fal-ai/hunyuan3d-v3/text-to-3d
+    image_endpoint: fal-ai/hunyuan3d-v3/image-to-3d
+    face_count: 50000
+    enable_pbr: true
+    generate_type: Normal
+    polygon_type: triangle
+    poll_interval_seconds: 10
+    timeout_seconds: 1800

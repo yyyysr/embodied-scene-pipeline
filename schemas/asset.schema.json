@@ -9,6 +9,10 @@
     "kind": {"type": "string"},
     "role": {"type": "string", "enum": ["structure", "task", "context", "decoration"]},
     "modeling_method": {"type": "string", "enum": ["blender", "generated_3d", "imported"]},
+    "source_file": {
+      "type": "string",
+      "pattern": "^generated_assets/meshes/[a-z0-9_]+/iteration_[0-9]{3}/asset\\.glb$"
+    },
     "dimensions": {"$ref": "#/$defs/vector3Positive"},
     "position": {"$ref": "#/$defs/vector3"},
     "rotation_euler": {"$ref": "#/$defs/vector3"},
@@ -44,6 +48,13 @@
         "required": ["role"]
       },
       "then": {"required": ["dimensions", "position"]}
+    },
+    {
+      "if": {
+        "properties": {"modeling_method": {"const": "generated_3d"}},
+        "required": ["modeling_method"]
+      },
+      "then": {"required": ["source_file"]}
     }
   ],
   "additionalProperties": false
