@@ -11,7 +11,8 @@ Agent-native pipeline for building embodied-AI scenes with Blender. The first mi
 - Blender MCP is optional for interactive diagnosis.
 - Spatial structure and regular assets are modeled by agents in Blender.
 - Complex assets may be delegated to a 3D-generation provider.
-- Static, non-interactive visual background may later use World Labs/3DGS.
+- Optional tabletop visual backgrounds can use a Codex image edit or FAL clean
+  plate followed by World Labs; see `docs/background-generation.md`.
 - USD physics authoring is intentionally deferred.
 
 ## Quick start

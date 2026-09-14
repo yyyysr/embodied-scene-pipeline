@@ -16,16 +16,19 @@ Build reproducible Blender scenes for embodied-AI tasks from text and optional r
 
 1. Read `docs/project-context.md` and the applicable YAML specifications.
 2. Preserve original user input under `workspaces/<id>/input/`.
-3. Update specifications before implementation when intent changes. For an
+3. For tabletop references, apply `docs/background-generation.md` before any
+   image-editing or 3DGS provider call; skip optional generation when static
+   visual context is absent or unnecessary.
+4. Update specifications before implementation when intent changes. For an
    image-derived irregular floorplan, begin with a semantic draft instead of
    inventing exact polygons; the Structure Agent resolves geometry and exports
    `build/structure_contract.json` before dependent room work begins.
-4. Build the scene from source-controlled Python.
-5. Add diagnostic cameras and lights in a dedicated review collection.
-6. validate geometry, naming, visibility, scale, and task clearances.
-7. Render overview, top, and task views.
-8. Write a machine-readable review report.
-9. Repair specifications or source scripts, then rebuild.
+5. Build the scene from source-controlled Python.
+6. Add diagnostic cameras and lights in a dedicated review collection.
+7. validate geometry, naming, visibility, scale, and task clearances.
+8. Render overview, top, and task views.
+9. Write a machine-readable review report.
+10. Repair specifications or source scripts, then rebuild.
 
 ## Agent ownership
 

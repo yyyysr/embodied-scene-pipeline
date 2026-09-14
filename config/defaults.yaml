@@ -10,4 +10,12 @@ review:
   collection: __REVIEW__
 paths:
   workspaces: workspaces
-
+background_generation:
+  clean_plate:
+    backend: auto
+    fal_provider: nano-banana
+  world:
+    provider: world_labs
+    model: marble-1.1
+    poll_interval_seconds: 15
+    timeout_seconds: 1800

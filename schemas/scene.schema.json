@@ -61,9 +61,50 @@
     "world": {
       "type": "object",
       "properties": {
+        "background_intent": {"type": "string", "enum": ["none", "auto", "required"]},
         "background_mode": {"type": "string", "enum": ["blender", "3dgs", "none"]},
+        "background_decision": {
+          "type": "string",
+          "enum": [
+            "user_requested_no_background",
+            "no_reference_or_background_request",
+            "blank_background",
+            "reference_contains_task_region_only",
+            "simple_blender_equivalent",
+            "required_background_needs_reference",
+            "clean_plate_would_require_large_hallucination",
+            "use_reference_directly",
+            "use_clean_plate"
+          ]
+        },
+        "background_input": {
+          "type": "string",
+          "pattern": "^(input/references|generated_assets/backgrounds)/[A-Za-z0-9_./-]+\\.(png|jpg|jpeg|webp)$"
+        },
+        "background_asset": {
+          "type": "string",
+          "pattern": "^generated_assets/backgrounds/[A-Za-z0-9_./-]+\\.spz$"
+        },
+        "environment_image": {
+          "type": "string",
+          "pattern": "^generated_assets/backgrounds/[A-Za-z0-9_./-]+\\.(png|jpg|jpeg|webp)$"
+        },
         "ambient_color": {"$ref": "#/$defs/color"}
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"background_mode": {"const": "3dgs"}},
+            "required": ["background_mode"]
+          },
+          "then": {
+            "required": ["background_decision", "background_input", "background_asset"],
+            "properties": {
+              "background_decision": {"enum": ["use_reference_directly", "use_clean_plate"]}
+            }
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "rooms": {"type": "array", "items": {"$ref": "room.schema.json"}},

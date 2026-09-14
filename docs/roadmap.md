@@ -19,10 +19,13 @@
 
 ## Milestone 3 — asset routing
 
-- [ ] Define provider-neutral asset request/response manifest
+- [x] Add optional tabletop background and clean-plate decision gates
+- [x] Add FAL clean-plate adapters for Nano Banana and GPT Image 2 aliases
+- [x] Add resumable World Labs generation with local SPZ outputs
+- [x] Record accepted backgrounds without a background-specific manifest
 - [ ] Add one 3D-generation adapter
 - [ ] Add asset normalization and quality checks
-- [ ] Evaluate optional World Labs/3DGS background path
+- [ ] Add direct SPZ visual review and explicit-asset alignment
 
 ## Milestone 4 — simulation semantics
 
@@ -30,4 +33,3 @@
 - [ ] Define physics specification schema
 - [ ] Author bodies, colliders, joints, mass, friction, and damping
 - [ ] Validate in the selected simulator
-

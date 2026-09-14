@@ -12,6 +12,7 @@ if str(RUNTIME_ROOT) not in sys.path:
     sys.path.insert(0, str(RUNTIME_ROOT))
 
 from blender_runtime.assets import build_asset
+from blender_runtime.backgrounds import validate_background
 from blender_runtime.cameras import add_review_cameras
 from blender_runtime.context import BuildContext
 from blender_runtime.lighting import add_review_lighting
@@ -101,6 +102,11 @@ def main() -> None:
         contract_room_ids=set(structure_contract["rooms"]),
         task_checks=context.review_checks,
     )
+    background_checks, background_findings = validate_background(spec, source_workspace)
+    report["checks"].update(background_checks)
+    report["findings"].extend(background_findings)
+    if background_findings and report["status"] == "pass":
+        report["status"] = "needs_repair"
     expected_room_ids = [room["id"] for room in spec.get("rooms", [])]
     room_views = {
         room_id: f"room_{room_id}.png"
@@ -159,6 +165,10 @@ def main() -> None:
                 "source_script": implementation.get("script"),
                 "structure_contract": str(structure_contract_path),
                 "review": str(review_directory),
+                "background_mode": (spec.get("world") or {}).get("background_mode", "none"),
+                "background_asset": (spec.get("world") or {}).get("background_asset"),
+                "background_input": (spec.get("world") or {}).get("background_input"),
+                "environment_image": (spec.get("world") or {}).get("environment_image"),
             },
             indent=2,
         ),

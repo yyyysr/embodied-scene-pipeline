@@ -45,6 +45,25 @@ geometry are synchronized into the accepted specification after review.
 
 Task objects require explicit dimensions, initial transforms, and semantic roles. Preserve free space around grasps, doors, drawers, robot bases, and navigation paths. Decorative objects may use looser constraints.
 
+## Optional static backgrounds
+
+The `world` mapping records a resolved background decision, not an automatic
+instruction to call a provider. A 3DGS selection names the accepted local input
+image and full-resolution local SPZ. Generated provider URLs and credentials do
+not belong in scene intent.
+
+```yaml
+world:
+  background_intent: auto
+  background_mode: 3dgs
+  background_decision: use_clean_plate
+  background_input: generated_assets/backgrounds/iteration_001/clean_plate.png
+  background_asset: generated_assets/backgrounds/iteration_001/world_full_res.spz
+  environment_image: generated_assets/backgrounds/iteration_001/world_pano.png
+```
+
+See `docs/background-generation.md` for the decision and preprocessing gates.
+
 ## Identity
 
 Use lowercase snake-case identifiers in specifications and copy them to Blender custom properties. Names must remain stable across rebuilds so later physics metadata can target objects reliably.

@@ -67,3 +67,33 @@ def test_primitive_scene_still_requires_primitive_geometry(tmp_path: Path) -> No
     }
     with pytest.raises(ValidationError):
         _validate_scene(tmp_path, scene)
+
+
+def test_3dgs_scene_records_only_accepted_local_result_paths(tmp_path: Path) -> None:
+    scene = {
+        "id": "tabletop_context",
+        "environment": "tabletop",
+        "world": {
+            "background_intent": "auto",
+            "background_mode": "3dgs",
+            "background_decision": "use_clean_plate",
+            "background_input": ("generated_assets/backgrounds/iteration_001/clean_plate.png"),
+            "background_asset": ("generated_assets/backgrounds/iteration_001/world_full_res.spz"),
+        },
+        "objects": [],
+    }
+    assert _validate_scene(tmp_path, scene)["world"]["background_mode"] == "3dgs"
+
+
+def test_3dgs_scene_requires_input_and_local_spz(tmp_path: Path) -> None:
+    scene = {
+        "id": "invalid_background",
+        "environment": "tabletop",
+        "world": {
+            "background_mode": "3dgs",
+            "background_decision": "use_reference_directly",
+        },
+        "objects": [],
+    }
+    with pytest.raises(ValidationError):
+        _validate_scene(tmp_path, scene)

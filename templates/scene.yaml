@@ -8,7 +8,13 @@ description: Describe the scene and surrounding environment.
 #   script: source/build_scene.py
 #   entrypoint: build_scene
 world:
+  background_intent: auto
   background_mode: blender
+  background_decision: no_reference_or_background_request
+  # For an accepted optional 3DGS result, use workspace-relative local files:
+  # background_input: generated_assets/backgrounds/iteration_001/clean_plate.png
+  # background_asset: generated_assets/backgrounds/iteration_001/world_full_res.spz
+  # environment_image: generated_assets/backgrounds/iteration_001/world_pano.png
   ambient_color: [0.05, 0.05, 0.05]
 rooms: []
 objects: []
