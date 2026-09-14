@@ -1,0 +1,33 @@
+id: tabletop_pick_and_place
+environment: tabletop
+description: A light wood table in a simple indoor lab environment.
+world:
+  background_mode: blender
+  ambient_color: [0.04, 0.04, 0.04]
+rooms: []
+objects:
+  - id: tabletop
+    kind: box
+    role: structure
+    modeling_method: blender
+    dimensions: [1.4, 0.8, 0.06]
+    position: [0.0, 0.0, 0.72]
+    rotation_euler: [0.0, 0.0, 0.0]
+    color: [0.55, 0.32, 0.15, 1.0]
+  - id: red_cup
+    kind: cylinder
+    role: task
+    modeling_method: blender
+    dimensions: [0.08, 0.08, 0.12]
+    position: [-0.28, 0.02, 0.81]
+    rotation_euler: [0.0, 0.0, 0.0]
+    color: [0.8, 0.05, 0.03, 1.0]
+  - id: blue_tray
+    kind: box
+    role: task
+    modeling_method: blender
+    dimensions: [0.28, 0.22, 0.025]
+    position: [0.28, 0.06, 0.7675]
+    rotation_euler: [0.0, 0.0, 0.0]
+    color: [0.03, 0.18, 0.8, 1.0]
+

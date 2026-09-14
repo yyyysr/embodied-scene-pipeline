@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "room.schema.json",
+  "title": "Room",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+    "purpose": {"type": "string"},
+    "status": {"type": "string", "enum": ["draft", "resolved", "accepted"]},
+    "floor_polygon": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "array",
+        "prefixItems": [{"type": "number"}, {"type": "number"}],
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "height": {"type": "number", "exclusiveMinimum": 0},
+    "openings": {"type": "array", "items": {"type": "object"}},
+    "notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"status": {"enum": ["resolved", "accepted"]}},
+        "required": ["status"]
+      },
+      "then": {"required": ["floor_polygon", "height"]}
+    }
+  ],
+  "additionalProperties": false
+}

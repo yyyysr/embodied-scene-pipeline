@@ -1,0 +1,10 @@
+id: room_01
+purpose: other
+status: resolved
+floor_polygon:
+  - [0.0, 0.0]
+  - [4.0, 0.0]
+  - [4.0, 3.0]
+  - [0.0, 3.0]
+height: 2.8
+openings: []

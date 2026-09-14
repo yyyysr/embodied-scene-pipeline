@@ -1,0 +1,10 @@
+id: replace_me
+task_type: tabletop
+actor:
+  type: robot_arm
+  base_position: [0.0, -0.6, 0.75]
+  reach_radius: 0.8
+manipulated_objects: []
+goal: Describe the desired final state.
+constraints: []
+

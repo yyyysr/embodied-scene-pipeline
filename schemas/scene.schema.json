@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scene.schema.json",
+  "title": "Embodied scene",
+  "type": "object",
+  "required": ["id", "environment", "objects"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+    "environment": {"type": "string", "enum": ["tabletop", "home", "office", "supermarket", "other"]},
+    "description": {"type": "string"},
+    "implementation": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": {"type": "string", "enum": ["primitive", "blender_script"]},
+        "script": {"type": "string", "pattern": "^source/[A-Za-z0-9_./-]+\\.py$"},
+        "entrypoint": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"mode": {"const": "blender_script"}}},
+          "then": {"required": ["script", "entrypoint"]}
+        }
+      ],
+      "additionalProperties": false
+    },
+    "floorplan": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"type": "string", "enum": ["draft", "resolved", "accepted"]},
+        "source_reference": {"type": "string"},
+        "structure_source": {"type": "string", "pattern": "^source/[A-Za-z0-9_./-]+\\.py$"},
+        "contract": {"type": "string"},
+        "scale": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": {"type": "string", "enum": ["known", "inferred", "unknown"]},
+            "meters_per_pixel": {"type": "number", "exclusiveMinimum": 0}
+          },
+          "additionalProperties": false
+        },
+        "origin_pixel": {"$ref": "#/$defs/vector2"},
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "description", "confidence"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+              "description": {"type": "string", "minLength": 1},
+              "confidence": {"type": "string", "enum": ["low", "medium", "high"]}
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "world": {
+      "type": "object",
+      "properties": {
+        "background_mode": {"type": "string", "enum": ["blender", "3dgs", "none"]},
+        "ambient_color": {"$ref": "#/$defs/color"}
+      },
+      "additionalProperties": false
+    },
+    "rooms": {"type": "array", "items": {"$ref": "room.schema.json"}},
+    "objects": {
+      "type": "array",
+      "items": {"$ref": "asset.schema.json"}
+    }
+  },
+  "$defs": {
+    "vector2": {
+      "type": "array",
+      "prefixItems": [{"type": "number"}, {"type": "number"}],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "color": {
+      "type": "array",
+      "items": {"type": "number", "minimum": 0, "maximum": 1},
+      "minItems": 3,
+      "maxItems": 4
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "not": {
+          "properties": {
+            "implementation": {
+              "properties": {"mode": {"const": "blender_script"}},
+              "required": ["mode"]
+            }
+          },
+          "required": ["implementation"]
+        }
+      },
+      "then": {
+        "properties": {
+          "objects": {
+            "items": {
+              "allOf": [
+                {"$ref": "asset.schema.json"},
+                {"required": ["kind", "dimensions", "position"]}
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

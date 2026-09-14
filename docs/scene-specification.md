@@ -1,0 +1,50 @@
+# Scene specification
+
+The scene specification is a semantic contract, not a dump of Blender state or
+a second geometry language. It records what must exist, its task role, known
+spatial constraints, uncertainty, and the source entry point that implements it.
+
+## Agent-authored implementation
+
+Simple primitive scenes may omit `implementation` and use the baseline object
+builder. Complex scenes should declare `implementation.mode: blender_script`
+with a script below the workspace `source/` directory and a callable entry point.
+The entry point receives a thin build context and the complete scene mapping:
+
+```python
+def build_scene(context, scene_spec):
+    # Use bpy and local Python modules without geometric restrictions.
+    context.register(root, "stable_semantic_id", "context", members=parts)
+```
+
+The runtime owns clean-scene reset, standard collections, review rigs,
+validation, rendering, and saving. The authored script owns topology, modifiers,
+materials, object hierarchy, and modeling strategy.
+
+## Irregular spaces
+
+Do not force uncertain image evidence into exact polygons before structure work.
+A floorplan may begin with `status: draft`; draft rooms require only stable IDs
+and may record purpose, scale evidence, reference images, assumptions, and
+confidence. The Structure Agent may inspect the reference, author and review the
+Blender shell, and refine its topology iteratively.
+
+Before Room or Asset Agents depend on the shell, the structure entry point must
+register each resolved floor area as an ordered, non-self-intersecting polygon
+in meters. Shared wall segments receive stable identifiers and are registered
+once; openings reference those wall identifiers. The runtime writes the result
+to `build/structure_contract.json`. This resolved contract, rather than an
+early image interpretation, is the spatial boundary for downstream work.
+
+Rooms marked `resolved` or `accepted` in `scene.yaml` must include a polygon and
+height. Draft rooms are intentionally allowed to omit them. Accepted intent
+changes still update YAML before rebuilding; discoveries made while resolving
+geometry are synchronized into the accepted specification after review.
+
+## Task geometry
+
+Task objects require explicit dimensions, initial transforms, and semantic roles. Preserve free space around grasps, doors, drawers, robot bases, and navigation paths. Decorative objects may use looser constraints.
+
+## Identity
+
+Use lowercase snake-case identifiers in specifications and copy them to Blender custom properties. Names must remain stable across rebuilds so later physics metadata can target objects reliably.

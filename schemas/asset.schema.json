@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "asset.schema.json",
+  "title": "Scene asset",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+    "kind": {"type": "string"},
+    "role": {"type": "string", "enum": ["structure", "task", "context", "decoration"]},
+    "modeling_method": {"type": "string", "enum": ["blender", "generated_3d", "imported"]},
+    "dimensions": {"$ref": "#/$defs/vector3Positive"},
+    "position": {"$ref": "#/$defs/vector3"},
+    "rotation_euler": {"$ref": "#/$defs/vector3"},
+    "color": {
+      "type": "array",
+      "items": {"type": "number", "minimum": 0, "maximum": 1},
+      "minItems": 3,
+      "maxItems": 4
+    }
+  },
+  "$defs": {
+    "vector3": {
+      "type": "array",
+      "prefixItems": [{"type": "number"}, {"type": "number"}, {"type": "number"}],
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "vector3Positive": {
+      "type": "array",
+      "prefixItems": [
+        {"type": "number", "exclusiveMinimum": 0},
+        {"type": "number", "exclusiveMinimum": 0},
+        {"type": "number", "exclusiveMinimum": 0}
+      ],
+      "minItems": 3,
+      "maxItems": 3
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"role": {"const": "task"}},
+        "required": ["role"]
+      },
+      "then": {"required": ["dimensions", "position"]}
+    }
+  ],
+  "additionalProperties": false
+}

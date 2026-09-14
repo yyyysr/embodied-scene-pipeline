@@ -1,0 +1,12 @@
+id: tabletop_pick_and_place
+task_type: tabletop
+actor:
+  type: robot_arm
+  base_position: [0.0, -0.65, 0.75]
+  reach_radius: 0.85
+manipulated_objects: [red_cup]
+goal: Move the red cup from the left side of the table onto the blue tray.
+constraints:
+  - Keep the grasp path free of obstacles.
+  - Keep the cup and tray within the robot reach envelope.
+

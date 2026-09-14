@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "structure-contract.schema.json",
+  "title": "Resolved scene structure contract",
+  "type": "object",
+  "required": [
+    "scene_id",
+    "status",
+    "source_status",
+    "coordinate_system",
+    "rooms",
+    "walls",
+    "openings"
+  ],
+  "properties": {
+    "scene_id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+    "status": {"type": "string", "enum": ["resolved", "accepted"]},
+    "source_status": {"type": "string", "enum": ["unspecified", "draft", "resolved", "accepted"]},
+    "coordinate_system": {
+      "type": "object",
+      "required": ["units", "up_axis"],
+      "properties": {
+        "units": {"const": "meters"},
+        "up_axis": {"const": "Z"}
+      },
+      "additionalProperties": false
+    },
+    "rooms": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z0-9_]+$"},
+      "additionalProperties": {
+        "type": "object",
+        "required": ["floor_polygon", "floor_z", "ceiling_z", "height"],
+        "properties": {
+          "floor_polygon": {
+            "type": "array",
+            "minItems": 3,
+            "items": {"$ref": "#/$defs/vector2"}
+          },
+          "floor_z": {"type": "number"},
+          "ceiling_z": {"type": "number"},
+          "height": {"type": "number", "exclusiveMinimum": 0},
+          "source": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "walls": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z0-9_]+$"},
+      "additionalProperties": {
+        "type": "object",
+        "required": ["start", "end", "thickness", "height", "adjacent_rooms"],
+        "properties": {
+          "start": {"$ref": "#/$defs/vector2"},
+          "end": {"$ref": "#/$defs/vector2"},
+          "thickness": {"type": "number", "exclusiveMinimum": 0},
+          "height": {"type": "number", "exclusiveMinimum": 0},
+          "adjacent_rooms": {
+            "type": "array",
+            "maxItems": 2,
+            "items": {"type": "string", "pattern": "^[a-z0-9_]+$"}
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "openings": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z0-9_]+$"},
+      "additionalProperties": {
+        "type": "object",
+        "required": ["connects", "center", "width", "height"],
+        "properties": {
+          "connects": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 2,
+            "items": {"type": "string", "pattern": "^[a-z0-9_]+$"}
+          },
+          "center": {"$ref": "#/$defs/vector3"},
+          "width": {"type": "number", "exclusiveMinimum": 0},
+          "height": {"type": "number", "exclusiveMinimum": 0},
+          "wall_id": {"type": "string", "pattern": "^[a-z0-9_]+$"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": {
+    "vector2": {
+      "type": "array",
+      "prefixItems": [{"type": "number"}, {"type": "number"}],
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "vector3": {
+      "type": "array",
+      "prefixItems": [{"type": "number"}, {"type": "number"}, {"type": "number"}],
+      "minItems": 3,
+      "maxItems": 3
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "review.schema.json",
+  "title": "Scene review",
+  "type": "object",
+  "required": ["scene_id", "status", "checks", "findings"],
+  "properties": {
+    "scene_id": {"type": "string"},
+    "status": {"type": "string", "enum": ["pass", "needs_repair", "error"]},
+    "checks": {"type": "object", "additionalProperties": {"type": "boolean"}},
+    "task_checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "passed", "entity_id", "measured", "required", "units"],
+        "properties": {
+          "id": {"type": "string"},
+          "passed": {"type": "boolean"},
+          "entity_id": {"type": "string"},
+          "measured": {"type": "number"},
+          "required": {"type": "number"},
+          "units": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["required_rooms", "rendered_rooms", "room_views", "room_inside_views", "global_views", "articulation_views"],
+      "properties": {
+        "required_rooms": {"type": "array", "items": {"type": "string"}},
+        "rendered_rooms": {"type": "array", "items": {"type": "string"}},
+        "room_views": {"type": "object", "additionalProperties": {"type": "string"}},
+        "room_inside_views": {"type": "object", "additionalProperties": {"type": "string"}},
+        "global_views": {"type": "array", "items": {"type": "string"}},
+        "articulation_views": {"type": "object", "additionalProperties": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "artifacts": {
+      "type": "object",
+      "required": ["overview", "top", "task", "articulation_open", "room_views", "room_inside_views"],
+      "properties": {
+        "overview": {"type": "boolean"},
+        "top": {"type": "boolean"},
+        "task": {"type": "boolean"},
+        "articulation_open": {"type": "boolean"},
+        "room_views": {"type": "object", "additionalProperties": {"type": "boolean"}},
+        "room_inside_views": {"type": "object", "additionalProperties": {"type": "boolean"}}
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["severity", "message"],
+        "properties": {
+          "severity": {"type": "string", "enum": ["blocking", "major", "cosmetic"]},
+          "entity_id": {"type": "string"},
+          "message": {"type": "string"},
+          "suggested_fix": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

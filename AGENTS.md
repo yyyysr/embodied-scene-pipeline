@@ -1,0 +1,57 @@
+# Repository instructions
+
+## Goal
+
+Build reproducible Blender scenes for embodied-AI tasks from text and optional reference images. Optimize for task usability, spatial consistency, editable source, and visual review rather than a single attractive render.
+
+## Current phase
+
+- Use the native agent entry point.
+- Keep task semantics separate from scene appearance.
+- Use Blender Python as the primary modeling interface.
+- Treat Blender MCP as optional escalation for live inspection.
+- Do not implement USD physics authoring yet; preserve export boundaries only.
+
+## Required workflow
+
+1. Read `docs/project-context.md` and the applicable YAML specifications.
+2. Preserve original user input under `workspaces/<id>/input/`.
+3. Update specifications before implementation when intent changes. For an
+   image-derived irregular floorplan, begin with a semantic draft instead of
+   inventing exact polygons; the Structure Agent resolves geometry and exports
+   `build/structure_contract.json` before dependent room work begins.
+4. Build the scene from source-controlled Python.
+5. Add diagnostic cameras and lights in a dedicated review collection.
+6. validate geometry, naming, visibility, scale, and task clearances.
+7. Render overview, top, and task views.
+8. Write a machine-readable review report.
+9. Repair specifications or source scripts, then rebuild.
+
+## Agent ownership
+
+- The root agent is Scene Director and owns global composition and integration.
+- Structure Agent owns the complete spatial shell, including irregular floor polygons, walls, floors, ceilings, doors, and windows.
+- Structure Agent registers resolved rooms, shared walls, and openings through
+  the build context. Room Agent work begins only after that contract exists.
+- Room Agent owns one assigned room and must respect the structure contract.
+- Asset Agent owns one complex asset or coherent asset set.
+- Review Agent is read-only with respect to generated `.blend` files; it reports issues and proposes source changes.
+- Never let multiple agents edit the same `.blend` file concurrently. Exchange scripts, YAML manifests, meshes, renders, and reports.
+
+## Modeling policy
+
+- Model walls, floors, doors, windows, tabletops, and room layout in Blender; they are not fixed procedural templates.
+- Prefer agent-authored Blender geometry for regular, editable objects.
+- Use the declared workspace Blender entry point for complex scenes. YAML is a
+  semantic contract, not a replacement geometry language; the runtime may not
+  restrict authored geometry to its primitive convenience builder.
+- Use a 3D-generation provider for assets whose curved or organic geometry would otherwise be low quality.
+- Use 3DGS only for non-interactive visual context. Never represent collision-critical or manipulable geometry solely as 3DGS.
+- Store dimensions in meters and use Z-up coordinates.
+
+## Change discipline
+
+- Never place secrets in source files.
+- Never make an MCP-only correction. Reproduce every accepted change in YAML or Python.
+- Do not commit generated workspaces, `.blend` files, renders, caches, or provider downloads.
+- Run relevant tests and schema validation after changes.

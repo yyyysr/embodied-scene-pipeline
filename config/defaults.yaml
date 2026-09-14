@@ -1,0 +1,13 @@
+units: meters
+up_axis: Z
+render:
+  engine: BLENDER_EEVEE_NEXT
+  resolution_x: 640
+  resolution_y: 480
+  samples: 32
+review:
+  views: [overview, top, task]
+  collection: __REVIEW__
+paths:
+  workspaces: workspaces
+

@@ -1,0 +1,14 @@
+id: replace_me
+environment: tabletop
+description: Describe the scene and surrounding environment.
+# For an agent-authored scene, uncomment this block after implementing
+# source/build_scene.py. Without it, the baseline primitive builder is used.
+# implementation:
+#   mode: blender_script
+#   script: source/build_scene.py
+#   entrypoint: build_scene
+world:
+  background_mode: blender
+  ambient_color: [0.05, 0.05, 0.05]
+rooms: []
+objects: []
