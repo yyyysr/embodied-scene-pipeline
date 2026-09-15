@@ -1,0 +1,11 @@
+# Compatibility baseline adapted from EmbodiedGen's SD3.5 environment.
+# Environment creation and CUDA-specific package installation remain user-managed.
+torch==2.8.0
+torchvision==0.23.0
+xformers==0.0.32.post2
+diffusers==0.34.0
+transformers==4.42.4
+accelerate==0.33.0
+sentencepiece==0.2.0
+safetensors>=0.4.3
+Pillow>=10.4

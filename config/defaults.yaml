@@ -22,7 +22,38 @@ background_generation:
 asset_generation:
   provider: hunyuan
   reference_image:
+    provider: fal
     fal_provider: nano-banana
+  local_sd35:
+    python: python
+    model_id: stabilityai/stable-diffusion-3.5-medium
+    device: cuda
+    dtype: float16
+    width: 1024
+    height: 1024
+    num_inference_steps: 25
+    guidance_scale: 7.0
+    seed: 42
+    negative_prompt: null
+    enable_model_cpu_offload: true
+    enable_xformers: false
+    enable_attention_slicing: true
+    local_files_only: false
+    timeout_seconds: 900
+  local_trellis:
+    python: python
+    repo_dir: third_party/TRELLIS
+    model_id: microsoft/TRELLIS-image-large
+    attention_backend: flash-attn
+    spconv_algo: native
+    seed: 42
+    sparse_structure_steps: 12
+    sparse_structure_guidance: 7.5
+    slat_steps: 12
+    slat_guidance: 3.0
+    simplify: 0.95
+    texture_size: 1024
+    timeout_seconds: 1800
   hunyuan:
     text_endpoint: fal-ai/hunyuan3d-v3/text-to-3d
     image_endpoint: fal-ai/hunyuan3d-v3/image-to-3d

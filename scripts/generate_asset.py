@@ -12,6 +12,8 @@ from embodied_scene.integrations import (
     Hunyuan3DProvider,
     ImageEditRequest,
     ImageGenerationRequest,
+    LocalSD35ImageGenerator,
+    LocalTrellisProvider,
     latest_asset_reference,
     select_asset_iteration,
 )
@@ -54,14 +56,15 @@ def _print_result(workspace: Path, *, status: str, **paths: Path | None) -> None
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate one candidate GLB with FAL")
+    parser = argparse.ArgumentParser(description="Generate one candidate 3D asset")
     parser.add_argument("workspace", type=Path)
     parser.add_argument("--asset-id", required=True)
     parser.add_argument("--mode", choices=MODES, required=True)
     parser.add_argument("--prompt", required=True)
     parser.add_argument("--dimensions", type=float, nargs=3, required=True, metavar=("X", "Y", "Z"))
     parser.add_argument("--source-image", type=Path)
-    parser.add_argument("--image-provider", choices=["nano-banana", "gpt-image-2"])
+    parser.add_argument("--image-provider", choices=["nano-banana", "gpt-image-2", "sd35"])
+    parser.add_argument("--3d-provider", dest="asset_provider", choices=["hunyuan", "trellis"])
     parser.add_argument("--face-count", type=int)
     parser.add_argument("--generate-type", choices=["Normal", "LowPoly", "Geometry"])
     parser.add_argument("--polygon-type", choices=["triangle", "quadrilateral"])
@@ -83,6 +86,9 @@ def main() -> None:
     all_defaults = load_defaults()
     defaults = all_defaults["asset_generation"]
     hunyuan_defaults = defaults["hunyuan"]
+    provider_3d = args.asset_provider or defaults["provider"]
+    if provider_3d == "trellis" and args.mode == "text-to-3d":
+        raise ValueError("trellis supports image-conditioned generation only")
     mesh_root = workspace / "generated_assets" / "meshes"
     regenerate = args.regenerate or args.regenerate_reference
     output = select_asset_iteration(mesh_root, args.asset_id, regenerate=regenerate)
@@ -104,7 +110,13 @@ def main() -> None:
             None if args.regenerate_reference else latest_asset_reference(mesh_root, args.asset_id)
         )
         if reference is None:
-            image_provider = args.image_provider or defaults["reference_image"]["fal_provider"]
+            reference_defaults = defaults["reference_image"]
+            configured_provider = reference_defaults.get("provider", "fal")
+            image_provider = args.image_provider or (
+                reference_defaults["fal_provider"]
+                if configured_provider == "fal"
+                else configured_provider
+            )
             reference_path = output / "reference.png"
             reference_state = output / ".reference.request.json"
             if args.regenerate_reference and not reference_state.exists():
@@ -114,6 +126,11 @@ def main() -> None:
                 source_conditioned=args.mode == "source-image-to-reference-to-3d",
             )
             if args.mode == "source-image-to-reference-to-3d":
+                if image_provider == "sd35":
+                    raise ValueError(
+                        "sd35 supports text-generated references only; choose a FAL editor "
+                        "for source-image-to-reference-to-3d"
+                    )
                 if args.source_image is None:
                     raise ValueError(
                         "--source-image is required when no reusable reference.png exists"
@@ -133,11 +150,28 @@ def main() -> None:
                     .image_path
                 )
             else:
-                reference = (
-                    FalImageGenerator(provider=image_provider)
-                    .generate(ImageGenerationRequest(prompt, output))
-                    .image_path
-                )
+                if image_provider == "sd35":
+                    sd35 = defaults["local_sd35"]
+                    generator = LocalSD35ImageGenerator(
+                        python_executable=sd35.get("python"),
+                        model_id=sd35["model_id"],
+                        device=sd35["device"],
+                        dtype=sd35["dtype"],
+                        width=sd35["width"],
+                        height=sd35["height"],
+                        num_inference_steps=sd35["num_inference_steps"],
+                        guidance_scale=sd35["guidance_scale"],
+                        seed=sd35["seed"],
+                        negative_prompt=sd35.get("negative_prompt"),
+                        enable_model_cpu_offload=sd35["enable_model_cpu_offload"],
+                        enable_xformers=sd35["enable_xformers"],
+                        enable_attention_slicing=sd35["enable_attention_slicing"],
+                        local_files_only=sd35["local_files_only"],
+                        timeout_seconds=sd35["timeout_seconds"],
+                    )
+                else:
+                    generator = FalImageGenerator(provider=image_provider)
+                reference = generator.generate(ImageGenerationRequest(prompt, output)).image_path
 
         if args.reference_only:
             _print_result(workspace, status="reference_ready", reference=reference)
@@ -155,12 +189,31 @@ def main() -> None:
         generate_type=args.generate_type or hunyuan_defaults["generate_type"],
         polygon_type=args.polygon_type or hunyuan_defaults["polygon_type"],
     )
-    result = Hunyuan3DProvider(
-        poll_interval_seconds=hunyuan_defaults["poll_interval_seconds"],
-        timeout_seconds=hunyuan_defaults["timeout_seconds"],
-        text_endpoint=hunyuan_defaults["text_endpoint"],
-        image_endpoint=hunyuan_defaults["image_endpoint"],
-    ).generate(request)
+    if provider_3d == "trellis":
+        trellis = defaults["local_trellis"]
+        provider = LocalTrellisProvider(
+            python_executable=trellis.get("python"),
+            repo_dir=repository_root() / trellis.get("repo_dir", "third_party/TRELLIS"),
+            model_id=trellis["model_id"],
+            attention_backend=trellis["attention_backend"],
+            spconv_algo=trellis["spconv_algo"],
+            seed=trellis["seed"],
+            sparse_structure_steps=trellis["sparse_structure_steps"],
+            sparse_structure_guidance=trellis["sparse_structure_guidance"],
+            slat_steps=trellis["slat_steps"],
+            slat_guidance=trellis["slat_guidance"],
+            simplify=trellis["simplify"],
+            texture_size=trellis["texture_size"],
+            timeout_seconds=trellis["timeout_seconds"],
+        )
+    else:
+        provider = Hunyuan3DProvider(
+            poll_interval_seconds=hunyuan_defaults["poll_interval_seconds"],
+            timeout_seconds=hunyuan_defaults["timeout_seconds"],
+            text_endpoint=hunyuan_defaults["text_endpoint"],
+            image_endpoint=hunyuan_defaults["image_endpoint"],
+        )
+    result = provider.generate(request)
     _print_result(
         workspace,
         status="generated_unreviewed",

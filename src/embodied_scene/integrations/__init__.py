@@ -18,6 +18,8 @@ from .image_editing import (
     ImageGenerationRequest,
     ImageGenerationResult,
 )
+from .local_sd35 import LocalSD35ImageGenerator, LocalSD35Session
+from .local_trellis import LocalTrellisProvider, LocalTrellisSession
 from .worldlabs import StaticBackgroundRequest, StaticBackgroundResult, WorldLabsProvider
 
 __all__ = [
@@ -34,6 +36,10 @@ __all__ = [
     "ImageGenerationProvider",
     "ImageGenerationRequest",
     "ImageGenerationResult",
+    "LocalSD35ImageGenerator",
+    "LocalSD35Session",
+    "LocalTrellisProvider",
+    "LocalTrellisSession",
     "StaticBackgroundRequest",
     "StaticBackgroundResult",
     "WorldLabsProvider",
