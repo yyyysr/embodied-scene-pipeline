@@ -27,7 +27,8 @@ Build reproducible Blender scenes for embodied-AI tasks from text and optional r
 5. Build the scene from source-controlled Python.
 6. Add diagnostic cameras and lights in a dedicated review collection.
 7. validate geometry, naming, visibility, scale, and task clearances.
-8. Render overview, top, and task views.
+8. Establish overview, top, and task evidence. On iteration, rerender only missing
+   or affected views; reuse inspected evidence and overwrite stable filenames.
 9. Write a machine-readable review report.
 10. Repair specifications or source scripts, then rebuild.
 
@@ -52,6 +53,9 @@ Build reproducible Blender scenes for embodied-AI tasks from text and optional r
 - Use a 3D-generation provider for assets whose curved or organic geometry would otherwise be low quality.
 - Use 3DGS only for non-interactive visual context. Never represent collision-critical or manipulable geometry solely as 3DGS.
 - Store dimensions in meters and use Z-up coordinates.
+- Define operable assets and their functional interiors before modeling; follow
+  create-scene's appliance and initial-lighting guidance. Review with formal
+  lighting and follow review-scene's rules for image reuse.
 
 ## Change discipline
 

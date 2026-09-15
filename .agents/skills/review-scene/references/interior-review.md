@@ -6,6 +6,12 @@ composition; they do not provide sufficient evidence for room-level acceptance.
 
 ## Evidence coverage
 
+Coverage describes the accepted scene, not an obligation to render the entire
+scene on every iteration. Reuse previously inspected images when geometry,
+visibility, lighting and relevant surroundings still support their conclusions.
+Regenerate only missing or invalidated views, following the selection and stable
+filename rules in SKILL.md. An uninspected old image is not accepted evidence.
+
 - Render at least one readable diagnostic view per resolved room. Add another
   view when one camera cannot show the room boundary, openings, circulation, and
   important furniture without substantial occlusion.
@@ -39,6 +45,10 @@ composition; they do not provide sufficient evidence for room-level acceptance.
 - An open cabinet must reveal a cavity rather than a solid carcass. An open
   drawer must have a bottom, sides, and back and must remain inside its carcass at
   the closed limit.
+- Check appliance-specific interiors: refrigerator compartments and an actual
+  washer loading aperture, seal and drum. A hollow box or a high polygon count
+  does not prove the correct interior. Inspect for surrounding furniture panels
+  crossing the usable cavity, not just door-sweep intersections.
 - Verify the moving root, fixed parent body, local axis, units, limits, handle
   placement, and semantic ownership from Blender data, not only from names or
   YAML declarations.

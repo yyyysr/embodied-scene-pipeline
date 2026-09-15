@@ -15,6 +15,9 @@ description: Create or rebuild an embodied-AI Blender scene from a task descript
    or configured FAL editor to create `clean_plate.png`, visually accept it, and
    only then call the World Labs helper. Never overwrite the original reference.
 5. Assign stable semantic identifiers to rooms, surfaces, objects, and task entities.
+   Decide which assets must open or expose usable interiors before modeling their
+   exterior. Include appliances as well as doors and cabinets; make appearance-only
+   simplifications explicit in the scene specification.
 6. Select modeling paths using `docs/asset-strategy.md`. When one complex asset
    is routed to FAL Hunyuan3D, read `docs/generated-assets.md` and choose direct
    text-to-3D, a text-generated single-object reference, or generative editing
@@ -35,6 +38,14 @@ description: Create or rebuild an embodied-AI Blender scene from a task descript
     use --geometry-only only when the user requests that boundary.
 
 Keep diagnostic cameras and lights separate from final scene lighting. Never make generated `.blend` state the only copy of an accepted modeling decision.
+
+For formal lighting, read [references/lighting.md](references/lighting.md) before
+choosing initial light parameters. Set lighting for the intended renderer during
+modeling, rather than postponing illumination decisions until USD export.
+
+Author review entry points with explicit view/asset selection and a build-only
+mode. A rebuild must not automatically regenerate every articulation image or
+create an iteration directory. Follow review-scene for evidence reuse.
 
 Create directories only when needed. Do not add hashes, duplicate JSON scene
 representations or permanent intermediates. Default output is governed by

@@ -43,6 +43,21 @@ reuse dimensions from an unrelated scene.
   stable semantic ownership plus intended parent body, local axis, units, and
   motion limits without authoring physics attributes.
 
+## Articulated appliances
+
+- Establish moving roots, closed poses, axes, units, limits, body ownership and
+  stable IDs during initial modeling. Handles and door decoration follow the door;
+  control panels and seals belong to the appropriate fixed or moving assembly.
+- Model the interior according to the appliance's function: refrigerator storage
+  compartments and shelves; a front-loading washer's front panel with a circular
+  aperture, seal, recessed open drum wall and back. A washer is not a cupboard.
+- Preserve operating gaps and a usable loading opening in both visual geometry
+  and collision geometry. A convex hull around a hollow shell closes its cavity;
+  use separate convex parts or supported static triangle meshes as appropriate.
+- Choose whether the appliance body is installed/static or movable explicitly.
+  Connect a moving door to its actual body when that body is dynamic; do not
+  silently immobilize an appliance merely to simplify joint authoring.
+
 ## Source quality gates
 
 Before integration, inspect the authored source for these failure patterns:
