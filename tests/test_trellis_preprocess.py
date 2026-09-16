@@ -2,39 +2,61 @@ from pathlib import Path
 
 import pytest
 
-np = pytest.importorskip("numpy")
 Image = pytest.importorskip("PIL.Image")
-ImageDraw = pytest.importorskip("PIL.ImageDraw")
-pytest.importorskip("cv2")
 
-from local_runtime.trellis_worker import _prepare_image
+from local_runtime.trellis_worker import _generate_one
 
 
-def test_trellis_white_background_preprocess_preserves_white_object_interior(
-    tmp_path: Path,
+class _Pipeline:
+    def __init__(self) -> None:
+        self.calls = []
+
+    def run(self, image, **kwargs):
+        self.calls.append((image, kwargs))
+        return {"gaussian": ["gaussian"], "mesh": ["mesh"]}
+
+
+class _Glb:
+    def export(self, path: str) -> None:
+        Path(path).write_bytes(b"glTF generated")
+
+
+class _Postprocessing:
+    def to_glb(self, gaussian, mesh, **kwargs):
+        assert (gaussian, mesh) == ("gaussian", "mesh")
+        assert kwargs == {"simplify": 0.95, "texture_size": 1024, "verbose": False}
+        return _Glb()
+
+
+@pytest.mark.parametrize("mode", ["RGB", "RGBA"])
+def test_trellis_run_delegates_preprocessing_to_pipeline(
+    tmp_path: Path, mode: str
 ) -> None:
-    source = Image.new("RGB", (256, 256), "white")
-    draw = ImageDraw.Draw(source)
-    draw.ellipse((64, 48, 192, 208), fill="white", outline="black", width=6)
-    path = tmp_path / "reference.png"
-    source.save(path)
+    input_path = tmp_path / "reference.png"
+    color = "white" if mode == "RGB" else (255, 255, 255, 0)
+    Image.new(mode, (256, 128), color).save(input_path)
+    output_path = tmp_path / "asset.glb"
+    pipeline = _Pipeline()
 
-    processed = np.asarray(_prepare_image(path))
-    assert processed.shape == (518, 518, 3)
-    assert np.all(processed[259, 259] > 240)
-    assert np.all(processed[0, 0] < 5)
+    result = _generate_one(
+        (pipeline, _Postprocessing()),
+        {
+            "input_path": str(input_path),
+            "output_path": str(output_path),
+            "seed": 42,
+            "sparse_structure_steps": 12,
+            "sparse_structure_guidance": 7.5,
+            "slat_steps": 12,
+            "slat_guidance": 3.0,
+            "simplify": 0.95,
+            "texture_size": 1024,
+        },
+    )
 
-
-def test_trellis_preprocess_rejects_nonuniform_opaque_border(tmp_path: Path) -> None:
-    pixels = np.zeros((128, 128, 3), dtype=np.uint8)
-    pixels[:, :64] = (255, 255, 255)
-    pixels[:, 64:] = (40, 80, 120)
-    path = tmp_path / "reference.png"
-    Image.fromarray(pixels).save(path)
-
-    try:
-        _prepare_image(path)
-    except ValueError as error:
-        assert "stable white border" in str(error)
-    else:
-        raise AssertionError("Expected a nonuniform opaque border to fail")
+    assert result == output_path
+    assert output_path.read_bytes() == b"glTF generated"
+    image, options = pipeline.calls[0]
+    assert image.mode == mode
+    assert image.size == (256, 128)
+    assert options["preprocess_image"] is True
+    assert options["formats"] == ["mesh", "gaussian"]

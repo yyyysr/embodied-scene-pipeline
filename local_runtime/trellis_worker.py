@@ -1,8 +1,4 @@
-"""Isolated Microsoft TRELLIS single-request or shared-session worker.
-
-The worker accepts an already reviewed transparent or clean white-background
-reference. It never invokes TRELLIS' learned background-removal preprocessing.
-"""
+"""Isolated Microsoft TRELLIS single-request or shared-session worker."""
 
 from __future__ import annotations
 
@@ -51,80 +47,6 @@ def _positive_number(request: dict, key: str) -> float:
     return float(value)
 
 
-def _prepare_image(input_path: Path):
-    """Prepare transparent/white-background input without learned segmentation."""
-    import cv2
-    import numpy as np
-    from PIL import Image
-
-    with Image.open(input_path) as source:
-        rgba = np.asarray(source.convert("RGBA"), dtype=np.uint8)
-    rgb = rgba[..., :3].astype(np.float32)
-    source_alpha = rgba[..., 3].astype(np.float32) / 255.0
-
-    if np.any(source_alpha < 0.98):
-        alpha = source_alpha
-    else:
-        height, width = source_alpha.shape
-        border_width = max(1, min(height, width) // 32)
-        border = np.concatenate(
-            (
-                rgb[:border_width].reshape(-1, 3),
-                rgb[-border_width:].reshape(-1, 3),
-                rgb[:, :border_width].reshape(-1, 3),
-                rgb[:, -border_width:].reshape(-1, 3),
-            )
-        )
-        if float(np.quantile(border, 0.05)) < 235 or float(border.std()) > 15:
-            raise ValueError(
-                "Opaque TRELLIS input must have a stable white border; regenerate the "
-                "reference with a clean white background or provide meaningful alpha"
-            )
-        background_color = np.median(border, axis=0)
-        color_distance = np.max(np.abs(rgb - background_color), axis=2)
-        background_candidate = (color_distance <= 25).astype(np.uint8)
-        _, labels = cv2.connectedComponents(background_candidate, connectivity=8)
-        border_labels = np.unique(
-            np.concatenate((labels[0], labels[-1], labels[:, 0], labels[:, -1]))
-        )
-        connected_background = np.isin(labels, border_labels) & (background_candidate > 0)
-        alpha = np.where(connected_background, 0.0, 1.0).astype(np.float32)
-
-    foreground = np.argwhere(alpha > 0.2)
-    if foreground.size == 0:
-        raise ValueError("TRELLIS reference contains no detectable foreground")
-    coverage = foreground.shape[0] / alpha.size
-    if coverage > 0.9:
-        raise ValueError("TRELLIS reference foreground covers almost the entire frame")
-
-    y_min, x_min = foreground.min(axis=0)
-    y_max, x_max = foreground.max(axis=0)
-    object_size = max(int(x_max - x_min + 1), int(y_max - y_min + 1))
-    square_size = max(1, round(object_size * 1.2))
-    center_x = (int(x_min) + int(x_max)) / 2
-    center_y = (int(y_min) + int(y_max)) / 2
-    left = round(center_x - square_size / 2)
-    top = round(center_y - square_size / 2)
-    right = left + square_size
-    bottom = top + square_size
-
-    premultiplied = np.clip(rgb * alpha[..., None], 0, 255).astype(np.uint8)
-    canvas = np.zeros((square_size, square_size, 3), dtype=np.uint8)
-    src_left = max(0, left)
-    src_top = max(0, top)
-    src_right = min(premultiplied.shape[1], right)
-    src_bottom = min(premultiplied.shape[0], bottom)
-    if src_left >= src_right or src_top >= src_bottom:
-        raise ValueError("TRELLIS reference crop does not intersect the source image")
-    dst_left = src_left - left
-    dst_top = src_top - top
-    canvas[
-        dst_top : dst_top + (src_bottom - src_top),
-        dst_left : dst_left + (src_right - src_left),
-    ] = premultiplied[src_top:src_bottom, src_left:src_right]
-    return Image.fromarray(canvas).resize((518, 518), Image.Resampling.LANCZOS)
-
-
 def _validate_glb(path: Path) -> None:
     if not path.is_file() or path.stat().st_size <= 12:
         raise RuntimeError("TRELLIS produced a missing or empty GLB")
@@ -171,12 +93,15 @@ def _generate_one(runtime, request: dict) -> Path:
     if not isinstance(simplify, (int, float)) or not 0 <= simplify < 1:
         raise ValueError("simplify must be between 0 inclusive and 1 exclusive")
     texture_size = _positive_int(request, "texture_size")
-    image = _prepare_image(input_path)
+    from PIL import Image
+
+    with Image.open(input_path) as source:
+        image = source.copy()
     outputs = pipeline.run(
         image,
         seed=seed,
         formats=["mesh", "gaussian"],
-        preprocess_image=False,
+        preprocess_image=True,
         sparse_structure_sampler_params={
             "steps": _positive_int(request, "sparse_structure_steps"),
             "cfg_strength": _positive_number(request, "sparse_structure_guidance"),

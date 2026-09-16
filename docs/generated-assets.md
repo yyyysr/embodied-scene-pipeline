@@ -108,11 +108,12 @@ python scripts/check_local_asset_runtime.py \
 The adapter adds this checkout to the child process only. Numba and Warp caches
 use a temporary session directory and are removed when the worker exits.
 
-TRELLIS accepts either a meaningful alpha channel or a stable white-background
-reference. White-background conversion is deterministic and happens in memory;
-the adapter disables TRELLIS' learned Rembg preprocessing and fails when the
-background contract is not satisfied. It retains neither a mask nor a condition
-image.
+TRELLIS preprocessing follows the official pipeline. A meaningful input alpha
+channel is used directly; otherwise the pipeline applies its shared Rembg U2Net
+session, crops the resulting foreground with padding, resizes it to the model's
+518-pixel input, and premultiplies RGB by alpha. This is an in-memory conditioning
+step rather than a separate segmentation pipeline. Neither the mask nor the
+processed condition image is retained.
 
 ```bash
 python scripts/generate_asset.py workspaces/demo \
