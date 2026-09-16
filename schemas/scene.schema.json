@@ -5,6 +5,7 @@
   "type": "object",
   "required": ["id", "environment", "objects"],
   "properties": {
+    "assembly": {"$ref": "assembly.schema.json"},
     "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
     "environment": {"type": "string", "enum": ["tabletop", "home", "office", "supermarket", "other"]},
     "description": {"type": "string"},

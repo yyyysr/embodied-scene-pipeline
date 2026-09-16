@@ -88,6 +88,7 @@ def main() -> None:
             workspace,
             debug=args.debug,
             blender=str(executable),
+            scene_spec=scene_path,
         )
         if result["status"] != "pass":
             raise SystemExit("USD delivery failed: " + "; ".join(result["errors"]))

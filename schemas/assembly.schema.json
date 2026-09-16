@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "assembly.schema.json",
+  "type": "object",
+  "required": ["version", "background"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"const": 1},
+    "background": {
+      "type": "object",
+      "required": ["source_to_world", "placement"],
+      "additionalProperties": false,
+      "properties": {
+        "preview_asset": {"type": "string", "pattern": "^[^/].*\\.spz$"},
+        "source_to_world": {
+          "type": "object",
+          "required": ["orientation_xyzw", "meters_per_source_unit"],
+          "additionalProperties": false,
+          "properties": {
+            "orientation_xyzw": {"$ref": "#/$defs/quaternion"},
+            "meters_per_source_unit": {"type": "number", "exclusiveMinimum": 0}
+          }
+        },
+        "placement": {
+          "type": "object",
+          "required": ["position_m", "orientation_xyzw", "uniform_scale"],
+          "additionalProperties": false,
+          "properties": {
+            "position_m": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+            "orientation_xyzw": {"$ref": "#/$defs/quaternion"},
+            "uniform_scale": {"type": "number", "exclusiveMinimum": 0}
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "quaternion": {"type": "array", "items": {"type": "number"}, "minItems": 4, "maxItems": 4}
+  }
+}

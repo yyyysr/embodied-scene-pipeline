@@ -1,0 +1,21 @@
+:root { font: 14px system-ui, sans-serif; color: #e5ebed; background: #283038; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; height: 100dvh; }
+.viewport { min-width: 0; min-height: 0; overflow: hidden; }
+aside { padding: 20px; background: #192126; overflow-y: auto; }
+h1 { font-size: 21px; margin: 0 0 8px; }
+small { color: #a9bcc5; overflow-wrap: anywhere; }
+label { display: block; margin: 12px 0; }
+.row { display: flex; gap: 6px; margin: 8px 0; }
+input, select, button { background: #303f48; color: inherit; border: 1px solid #51636c; border-radius: 4px; padding: 7px; min-width: 0; }
+input, select { width: 100%; }
+button { cursor: pointer; flex: 1; }
+button:hover { background: #42606b; }
+button:disabled { opacity: .4; cursor: default; }
+fieldset { border: 1px solid #51636c; margin: 15px 0; padding: 10px; }
+details { margin: 12px 0; }
+summary { cursor: pointer; }
+img { max-width: 100%; margin-top: 10px; }
+[role=status] { line-height: 1.5; overflow-wrap: anywhere; color: #bcddc9; }
+@media(max-width: 720px) { main { grid-template-columns: minmax(0, 1fr) 265px; } aside { padding: 12px; } }

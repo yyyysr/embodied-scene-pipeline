@@ -84,5 +84,7 @@ geometry defect. Switch `background_mode` to `blender` or `none` and rebuild.
 When the user explicitly requires the background, retain the failed iteration
 and request better evidence or retry instead of silently accepting a fallback.
 
-Alignment, SPZ rendering, and authority for provider collider meshes are outside
-this phase. Provider collider geometry is never task collision truth.
+World generation does not establish scale or placement. After explicit geometry
+exists, follow `docs/scene-editor.md` to align the selected SPZ and deliver the
+combined USD. Provider collider geometry may aid visual placement but is never
+task collision truth.

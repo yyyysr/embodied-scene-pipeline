@@ -81,6 +81,30 @@ world:
 
 See `docs/background-generation.md` for the decision and preprocessing gates.
 
+When the background has been aligned to explicit geometry, `assembly` records the
+only accepted transform. Source correction and scene placement are deliberately
+separate: the former converts the generated asset into the standard meter/Z-up
+frame, while the latter places that corrected asset around the fixed task scene.
+
+```yaml
+assembly:
+  version: 1
+  background:
+    preview_asset: generated_assets/backgrounds/iteration_001/world_100k.spz
+    source_to_world:
+      orientation_xyzw: [0, 0, 0, 1]
+      meters_per_source_unit: 1
+    placement:
+      position_m: [0, 0, 0]
+      orientation_xyzw: [0, 0, 0, 1]
+      uniform_scale: 1
+```
+
+These identity values are examples, not an assertion that a generated world is
+already aligned. The Scene Director must inspect combined evidence before adding
+or accepting this mapping. `preview_asset` affects browser performance only; final
+delivery always uses `world.background_asset`.
+
 ## Identity
 
 Use lowercase snake-case identifiers in specifications and copy them to Blender custom properties. Names must remain stable across rebuilds so later physics metadata can target objects reliably.

@@ -14,10 +14,14 @@
 7. Ask Room Agents for details only after the structure contract is available.
 8. Ask Asset Agents only for difficult assets with explicit spatial boundaries.
 9. Integrate source scripts through the declared Blender entry point in a clean scene.
-10. Add a removable diagnostic rig in `__REVIEW__`.
-11. Validate and render overview, top, and task views.
-12. Review evidence and prioritize blocking, major, and cosmetic defects.
-13. Synchronize accepted discoveries into specifications or source and rebuild.
+10. When explicit geometry and a 3DGS background both exist, align them through
+    the scene assembly workflow in `docs/scene-editor.md`. Treat explicit geometry
+    as the meter/Z-up authority, save the accepted transform in `scene.yaml`, and
+    never treat the identity default as evidence of alignment.
+11. Add a removable diagnostic rig in `__REVIEW__`.
+12. Validate and render overview, top, and task views.
+13. Review evidence and prioritize blocking, major, and cosmetic defects.
+14. Synchronize accepted discoveries into specifications or source and rebuild.
 
 ## Escalate to MCP when
 

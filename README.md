@@ -18,6 +18,8 @@ Agent-native pipeline for building embodied-AI scenes with Blender. The first mi
   plate followed by World Labs; see `docs/background-generation.md`.
 - Native Blender USD export and separate `pxr` physics authoring with static checks;
   Isaac Sim dynamic checks are performed by the user. See [USD workflow](docs/usd-physics.md).
+- For browser-based SPZ/tabletop alignment and combined USD delivery, see
+  [Scene assembly editor](docs/scene-editor.md).
 
 ## Quick start
 
@@ -40,32 +42,6 @@ detailing.
 Or open this repository in Codex and ask:
 
 > Read AGENTS.md and docs/project-context.md. Create the tabletop example, run validation and diagnostic renders, and report remaining issues.
-
-### Optional image review tools (Pillow)
-
-Install the `review` extra for host-side image processing, such as resizing
-renders and assembling contact sheets. Pillow is optional: the core scene builder
-and Blender-based contact-sheet scripts do not require it.
-
-Run these commands from the repository root, using the project's existing `.venv`:
-
-```bash
-.venv/bin/python -m pip install -e '.[review]'
-.venv/bin/python -c "from PIL import Image; print('Pillow', Image.__version__)"
-```
-
-For a new environment with both development and image review tools:
-
-```bash
-python3 -m venv .venv
-.venv/bin/python -m pip install -e '.[dev,review]'
-```
-
-The package is named `Pillow`, but Python imports it as `PIL`. Install it into
-the interpreter that runs the image-processing script. These commands install
-into the project virtual environment, not Blender's separate Python runtime;
-run scripts that use Pillow with `.venv/bin/python`. Scripts that import `bpy`
-should continue to run through Blender.
 
 ## Source of truth
 

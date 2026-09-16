@@ -281,6 +281,11 @@ def validate_usd(scene_path: Path):
     if not stage.GetDefaultPrim():
         errors.append("Missing default prim")
     for prim in stage.Traverse():
+        if prim.GetTypeName() == "ParticleField3DGaussianSplat":
+            from embodied_scene.assembly import validate_splats
+
+            errors.extend(validate_splats(prim))
+            counts["gaussian_fields"] = counts.get("gaussian_fields", 0) + 1
         if prim.HasAPI(UsdLux.LightAPI):
             counts["lights"] += 1
             light = UsdLux.LightAPI(prim)

@@ -117,7 +117,7 @@ def publish_stage(stage, output: Path) -> dict:
 
 def export_scene(
     blend: Path, physics: Path, workspace: Path, *, debug=False, blender: str | None = None,
-    configure_stage=None
+    configure_stage=None, scene_spec: Path | None = None
 ) -> dict:
     workspace = workspace.resolve()
     try:
@@ -148,6 +148,13 @@ def export_scene(
             try:
                 mapping = build_object_map(exchange, debug=debug)["objects"]
                 stage = author_stage(physics, exchange, mapping, debug=debug)
+                from embodied_scene.assembly import compose_background
+                from embodied_scene.specs.validation import validate_specification
+
+                specification = scene_spec or workspace / "specs/scene.yaml"
+                if specification.exists():
+                    spec = validate_specification(specification, "scene.schema.json")
+                    compose_background(stage, spec, specification.resolve().parents[1], exchange)
                 if configure_stage is not None:
                     configure_stage(stage)
                 result = publish_stage(stage, workspace / "exports")

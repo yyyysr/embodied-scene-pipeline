@@ -12,4 +12,4 @@ workspaces/*
 *.blend
 *.blend1
 *.exr
-
+node_modules/
