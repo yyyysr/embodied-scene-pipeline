@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { degrees, quaternion, type Assembly, type Vec3 } from './transforms'
+import { degrees, quaternion, withSourceUpAxis, type Assembly, type Vec3 } from './transforms'
 import { Viewport } from './viewport'
 import './style.css'
 
@@ -75,6 +75,25 @@ function App() {
     } catch (e) { setMessage(String(e)) }
   }
 
+  async function alignFloor() {
+    if (!current.current) return
+    const initial = structuredClone(current.current)
+    setBusy(true)
+    setMessage('正在估算背景地面…')
+    try {
+      const result = await api<{ delta_z_m: number; floor_z_m: number; warning: string }>(
+        'estimate-floor', 'POST', { assembly: initial, revision: saved?.revision })
+      if (JSON.stringify(current.current) !== JSON.stringify(initial)) {
+        setMessage('估算期间参数已改变，请重新估算。'); return
+      }
+      const p = initial.background.placement
+      p.position_m[2] += result.delta_z_m
+      change(initial)
+      setMessage(`估算地面 Z=${result.floor_z_m.toFixed(3)} m，背景已移动 ${result.delta_z_m.toFixed(3)} m。${result.warning}`)
+    } catch (e) { setMessage(String(e)) }
+    finally { setBusy(false) }
+  }
+
   async function reload() {
     try {
       const next = await api<Snapshot>('scene')
@@ -109,7 +128,8 @@ function App() {
     <div className="viewport" ref={host} />
     <aside>
       <h1>场景组装</h1><small>{saved?.name}</small>
-      <p>米 · Z 向上 · 台面固定</p>
+      <p>世界坐标：米 · Z 向上 · 台面固定</p>
+      <p>背景横躺或倒置时，请先设置源坐标适配，再调整摆放。</p>
       <label>显示<select onChange={e => viewport.current?.setVisibility(e.target.value)}>
         <option value="combined">背景与交互场景</option><option value="background">仅背景</option><option value="interactive">仅交互场景</option>
       </select></label>
@@ -125,9 +145,16 @@ function App() {
           <VectorInput label="位置 (m)" value={p.position_m} step={0.01} onChange={v => placement('position_m', v)} />
           <VectorInput label="旋转 XYZ (°)" value={degrees(p.orientation_xyzw)} step={1} onChange={v => placement('orientation_xyzw', quaternion(v))} />
           <label>等比尺度<NumberInput value={p.uniform_scale} min={0.001} step={0.01} onChange={v => placement('uniform_scale', v)} /></label>
+          <button onClick={alignFloor}>估算地面并对齐 Z=0</button>
+          <small>先校正源轴向；仅移动背景高度，可撤销，点击保存后生效于导出。</small>
         </>}
-        <details><summary>源坐标适配</summary><p>仅在首次校准时设置；不随摆放重复旋转。</p>
+        <details open><summary>源坐标适配</summary><p>选择背景原始向上方向。预设会替换源轴旋转；不改变摆放或尺度。</p>
           {assembly && <>
+            <div className="row">
+              <button onClick={() => change(withSourceUpAxis(assembly, 'y-down'))}>源 −Y 向上</button>
+              <button onClick={() => change(withSourceUpAxis(assembly, 'y-up'))}>源 +Y 向上</button>
+              <button onClick={() => change(withSourceUpAxis(assembly, 'z-up'))}>源 +Z 向上</button>
+            </div>
             <VectorInput label="源轴旋转 XYZ (°)" value={degrees(assembly.background.source_to_world.orientation_xyzw)} step={90} onChange={v => change({ ...assembly, background: { ...assembly.background, source_to_world: { ...assembly.background.source_to_world, orientation_xyzw: quaternion(v) } } })} />
             <label>米 / 源单位<NumberInput min={0.000001} step={0.01} value={assembly.background.source_to_world.meters_per_source_unit} onChange={v => change({ ...assembly, background: { ...assembly.background, source_to_world: { ...assembly.background.source_to_world, meters_per_source_unit: v } } })} /></label>
           </>}

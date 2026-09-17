@@ -5,6 +5,19 @@ import yaml
 from jsonschema import ValidationError
 
 from embodied_scene.specs import validate_specification
+from embodied_scene.assembly import default_assembly
+
+
+def test_assembly_reference_does_not_change_scene_fragment_scope(tmp_path):
+    scene = {
+        "id": "axis_correction", "environment": "tabletop", "objects": [],
+        "assembly": default_assembly(),
+        "world": {"ambient_color": [0.05, 0.045, 0.04]},
+    }
+    assert _validate_scene(tmp_path, scene)["world"]["ambient_color"] == [0.05, 0.045, 0.04]
+    scene["world"]["ambient_color"] = [1, 2]
+    with pytest.raises(ValidationError):
+        _validate_scene(tmp_path, scene)
 
 
 def test_tabletop_example_is_valid() -> None:

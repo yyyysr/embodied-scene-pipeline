@@ -35,6 +35,14 @@ adjust background scale, floor height and placement. The smallest available
 quality without changing delivery quality. The final source remains
 `world.background_asset`; resolutions must share the same source coordinate frame.
 
+The expanded source-axis panel provides explicit -Y-up, +Y-up and +Z-up presets.
+Each replaces the source rotation (it does not accumulate rotations), leaving
+placement and unit scale unchanged. -Y-up uses Rx(-90 degrees), mapping
+source (x,y,z) to world (x,z,-y). This is separate from the GLB Rx(+90 degrees).
+The kitchen workspace records this correction based on its reference and inspected
+SPZ projections. Its scale, floor height and placement still require manual review;
+a saved assembly is editable state, not proof of completed alignment.
+
 ## Agent alignment procedure
 
 Alignment is a Scene Director task performed after the SPZ and explicit Blender
@@ -173,3 +181,20 @@ orientation. Spark and USD are checked against the same source-space fixture.
 The design borrows image-blaster's separate background/asset transforms and manual
 placement workflow. The implementation does not copy its rendering patches,
 physics approximations, source recentering, or scene JSON persistence.
+
+## Estimate floor height
+
+After correcting source axes, click **估算地面并对齐 Z=0** to estimate a low,
+spatially broad horizontal band from the currently displayed SPZ. The backend
+uses the submitted (including unsaved) source and placement transforms, filters
+low-opacity/non-finite points, and searches the lower robust height range for
+bands with sufficient two-dimensional coverage. Sparse low outliers do not define
+the floor. Missing evidence returns an error instead of a bounding-box fallback.
+
+The result adjusts only background placement Z in the browser, supports undo,
+and requires Save for persistence/export. It can move the background up or down;
+repeating with unchanged geometry leaves the estimated floor at Z=0. Correct axes
+first and rerun after changing scale or rotation. This is an approximate geometric
+suggestion: a low platform can be mistaken for a floor, tilted/partial floors may
+be rejected, and Gaussian tails or noise can remain below the grid. Interactive
+geometry and physics are never changed. No estimate is applied on page load.

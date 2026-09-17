@@ -84,3 +84,28 @@ def test_invalid_save_preserves_file(workspace):
             )
             assert result.status_code == 422
         assert (workspace / "specs/scene.yaml").read_text() == before
+
+
+def test_floor_estimate_uses_unsaved_transform_without_writing(workspace, monkeypatch):
+    from types import SimpleNamespace
+
+    import numpy as np
+    import usd_convert_gsplat
+
+    rng = np.random.default_rng(1)
+    points = np.concatenate([
+        np.column_stack((rng.uniform(-2, 2, (3000, 2)), rng.normal(-1, .003, 3000))),
+        rng.uniform([-2, -2, -1], [2, 2, 2], (3000, 3)),
+    ])
+    monkeypatch.setattr(usd_convert_gsplat, 'read_spz', lambda path: SimpleNamespace(
+        positions=points, opacities=np.ones(len(points))))
+    before = (workspace / 'specs/scene.yaml').read_text()
+    with TestClient(create_app(workspace, 'blender')) as client:
+        snapshot = client.get('/api/scene').json()
+        snapshot['assembly']['background']['placement']['position_m'] = [3, 4, .25]
+        result = client.post('/api/estimate-floor', json=snapshot)
+        assert result.status_code == 200, result.text
+        assert result.json()['delta_z_m'] == pytest.approx(.75, abs=.01)
+        snapshot['assembly']['background']['preview_asset'] = '../outside.spz'
+        assert client.post('/api/estimate-floor', json=snapshot).status_code == 422
+    assert (workspace / 'specs/scene.yaml').read_text() == before

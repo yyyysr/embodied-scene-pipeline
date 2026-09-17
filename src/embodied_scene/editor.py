@@ -236,6 +236,35 @@ def create_app(workspace: Path, blender: str):
     def preview():
         return start_job("preview", lambda: prepare_preview(workspace, temporary, blender))
 
+    @app.post("/api/estimate-floor")
+    def estimate_background_floor(payload: dict):
+        from usd_convert_gsplat import read_spz
+
+        from embodied_scene.floor import estimate_floor
+
+        with lock:
+            refresh()
+            if payload.get("revision") != state["revision"]:
+                raise HTTPException(409, "scene.yaml changed; reload before estimating")
+            if state["job"]["status"] == "running":
+                raise HTTPException(409, "Wait for the current build")
+            try:
+                assembly = validate_assembly(payload["assembly"])
+                spec = load_yaml(scene_path)
+                if spec.get("world", {}).get("background_mode") != "3dgs":
+                    raise ValueError("Requires a 3dgs background")
+                # Estimate the same resolution displayed in the editor.
+                relative = assembly["background"].get("preview_asset") or spec["world"]["background_asset"]
+                if relative not in preview_choices(spec):
+                    raise ValueError("Unknown background preview")
+                path = workspace_asset(workspace, relative)
+            except Exception as error:
+                raise HTTPException(422, str(error)) from error
+        try:
+            return estimate_floor(read_spz(str(path)), assembly)
+        except Exception as error:
+            raise HTTPException(422, str(error)) from error
+
     @app.post("/api/export")
     def export():
         with lock:

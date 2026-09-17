@@ -27,13 +27,14 @@ def small_spz():
     )
 
 
-def test_composed_gaussian_is_portable_and_matches_editor_coordinates(tmp_path):
+@pytest.mark.parametrize("source_sign, expected", [(1, (7, 6, 8)), (-1, (1, 6, 4))])
+def test_composed_gaussian_is_portable_and_matches_editor_coordinates(tmp_path, source_sign, expected):
     source = tmp_path / "background.spz"
     source.write_bytes(small_spz())
     assembly = default_assembly()
     s = math.sqrt(0.5)
     assembly["background"]["source_to_world"] = {
-        "orientation_xyzw": [s, 0, 0, s],
+        "orientation_xyzw": [source_sign * s, 0, 0, s],
         "meters_per_source_unit": 0.5,
     }
     assembly["background"]["placement"] = {
@@ -62,7 +63,7 @@ def test_composed_gaussian_is_portable_and_matches_editor_coordinates(tmp_path):
     splat = final.GetPrimAtPath("/World/BackgroundPlacement/SourceToWorld/Splat")
     matrix = UsdGeom.XformCache().GetLocalToWorldTransform(splat)
     point = matrix.Transform(Gf.Vec3d(*splat.GetAttribute("positions").Get()[0]))
-    assert tuple(point) == pytest.approx((7, 6, 8))
+    assert tuple(point) == pytest.approx(expected)
     assert tuple(splat.GetAttribute("positions").Get()[0]) == (1, 2, 3)
     orientation = splat.GetAttribute("orientations").Get()[0]
     assert orientation.GetImaginary()[2] == pytest.approx(181 * math.sqrt(0.5) / 511)

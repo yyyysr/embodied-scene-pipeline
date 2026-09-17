@@ -15,6 +15,17 @@ export type Assembly = {
 // Blender export_yup=True: (x,y,z) -> (x,z,-y). This inverse is applied ONCE.
 export const GLTF_TO_Z_UP = new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), Math.PI / 2)
 
+export type SourceUpAxis = 'z-up' | 'y-up' | 'y-down'
+
+// Explicit source conventions, never inferred from the SPZ extension.
+// Replace the source rotation rather than accumulating quarter turns.
+export function withSourceUpAxis(a: Assembly, axis: SourceUpAxis): Assembly {
+  const angle = { 'z-up': 0, 'y-up': 90, 'y-down': -90 }[axis]
+  return { ...a, background: { ...a.background, source_to_world: {
+    ...a.background.source_to_world, orientation_xyzw: quaternion([angle, 0, 0]),
+  } } }
+}
+
 export function applyPlacement(object: Object3D, p: Placement) {
   object.position.fromArray(p.position_m)
   object.quaternion.fromArray(p.orientation_xyzw)
