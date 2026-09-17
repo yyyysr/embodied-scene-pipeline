@@ -21,6 +21,22 @@ The runtime owns clean-scene reset, standard collections, review rigs,
 validation, rendering, and saving. The authored script owns topology, modifiers,
 materials, object hierarchy, and modeling strategy.
 
+## Appearance intent
+
+Resolve surface materials per asset/part and formal lighting before modeling.
+Use the scene description and editable material code to express surface intent;
+the physics specification's materials describe contact behavior, not appearance.
+For generated assets, follow [material normalization](generated-assets.md#material-intent-and-normalization)
+when mapping imported parameters and textures to those surfaces.
+
+Record the target renderer, environment and local lights in `specs/lighting.yaml`,
+using the defaults and override rules in the
+[formal lighting guidance](../.agents/skills/create-scene/references/lighting.md).
+Keep Blender preview settings separately identified from USD delivery settings.
+This lighting file is a workspace authoring convention; source/export code must
+implement its values. Resolve defaults during planning so modeling, export and
+review share one intended configuration.
+
 ## Irregular spaces
 
 Do not force uncertain image evidence into exact polygons before structure work.

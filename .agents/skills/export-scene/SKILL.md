@@ -5,16 +5,20 @@ description: Export a modeled Blender scene as one USD delivery with pxr physics
 
 # Export scene
 
-Read `docs/usd-physics.md` and the workspace scene/task/physics specifications.
+Read `docs/usd-physics.md` and the workspace scene/task/physics and lighting
+specifications. Resolve material and lighting intent before export using the
+material normalization guidance in `docs/generated-assets.md` and the defaults
+in [../create-scene/references/lighting.md](../create-scene/references/lighting.md).
 
 Check source readiness: stable semantic IDs, complete body membership, useful joint
 frames, cavity-preserving collisions, and actual lights outside __REVIEW__. Repair
 source or configuration if missing; do not invent a parallel JSON scene description.
 Opening an asset must already reveal its intended functional interior in Blender;
 adding a joint downstream cannot repair a solid or incorrectly modeled body.
-Carry the scene's chosen lighting settings through export. Initial illumination
-choices belong to create-scene's lighting guidance; light presence alone does not
-establish reasonable brightness.
+Map the resolved surface materials and target-renderer light settings into USD.
+Use Blender's native exporter for supported data and reproducible source-backed
+adaptation through the shared delivery pipeline where mapping is needed. Blender
+preview light power and file-format material fallbacks do not define delivery intent.
 
 Use the shared entry point:
 
@@ -24,6 +28,12 @@ Use the shared entry point:
 
 The full `scripts/run_blender.py` pipeline already invokes this phase. Use --blend
 and --physics only for an existing prepared source. Do not write per-case exporters.
+
+Reopen the final USD and compare bound shaders, texture channels/color spaces,
+and effective environment/local light attributes against the resolved specifications.
+For an untextured environment, verify the effective texture asset is unset/empty
+and package only remaining referenced textures. See the appearance acceptance
+criteria in `docs/usd-physics.md`; correct source/specification mismatches before delivery.
 
 Deliver exports/scene.usdc and referenced textures. Query this final USD to debug.
 Keep one review/report.json. Use --debug only for a concrete investigation; do not

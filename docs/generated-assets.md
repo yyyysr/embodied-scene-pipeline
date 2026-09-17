@@ -4,6 +4,37 @@ Use generated meshes when agent-authored Blender geometry would be a poor fit
 for a curved, organic, upholstered, or visually complex object. Precise task
 surfaces and mechanisms stay authored in Blender.
 
+## Material intent and normalization
+
+Before generation or import, determine surface materials per asset or part from
+the task, reference and intended object construction. Unspecified materials use
+a nonmetallic default (`metallic=0`). Leaves, ceramic, wood, paper, fabric and
+ordinary plastic are dielectrics; exposed metal parts receive their own metal
+material. Choose roughness for the surface finish rather than applying one value
+to every asset. Record these decisions in the scene description and editable
+material/import code; no separate asset manifest is needed.
+
+Normalize each imported material to that intent before scene integration:
+
+1. Inspect explicit scalar parameters and connected PBR textures, including
+   their channels and multipliers. Distinguish authored values from format defaults.
+2. Preserve meaningful base-color, metallic/roughness and normal maps and their
+   UVs. Base-color RGB uses sRGB decoding; metallic, roughness and normal data
+   use non-color/linear interpretation. Preserve the appropriate alpha behavior.
+3. Resolve metallic response per material. If metal intent and a meaningful
+   metallic map are both absent, author the nonmetallic default explicitly.
+   Where a metallic map supplies material variation, retain it and its intended
+   multiplier; multiplying it by zero would erase that information. Reconcile
+   explicit provider parameters with the intended surface rather than treating
+   the provider as the material authority.
+4. Build the normalized Blender shader in reproducible source and carry the same
+   material intent into the delivered USD. Keep the provider GLB as the input.
+
+In glTF, an omitted `metallicFactor` resolves to 1 and multiplies any metallic
+texture; this is a parsing rule, not evidence that the asset is metal. This
+distinction applies to all providers, including TRELLIS. Check the bound shader
+and effective texture connections in the final USD as part of delivery acceptance.
+
 ## Generation modes
 
 The asset helper supports three explicit routes:
@@ -220,7 +251,8 @@ generation. Optional controls are:
 ```
 
 Every downloaded GLB is unreviewed. Import it into Blender, normalize it to the
-declared meter dimensions, correct axes and origin, inspect materials and
-topology, and verify task-relevant geometry. Only then set `modeling_method` to
+declared meter dimensions, correct axes and origin, apply the material
+normalization above, inspect topology, and verify task-relevant geometry. Only
+then set `modeling_method` to
 `generated_3d` and point the existing asset/scene specification at the accepted
 local `source_file`. No separate asset manifest is required.

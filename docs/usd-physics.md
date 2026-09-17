@@ -23,7 +23,12 @@ missing physics must not silently produce a supposedly simulation-ready scene.
 ## Source responsibilities
 
 - Preserve original requests in input/. Scene/task YAML describes intent; physics
-  YAML separately describes body membership, mass, collision, material and joints.
+  YAML separately describes body membership, mass, collision, physics material and joints.
+- Establish surface-material intent in the scene description/source and formal
+  lighting in `specs/lighting.yaml` before modeling. Resolve generated materials
+  using [generated-assets.md](generated-assets.md#material-intent-and-normalization)
+  and lighting using the [formal lighting guidance](../.agents/skills/create-scene/references/lighting.md).
+  Keep target USD settings distinct from Blender preview parameters.
 - Assign unique semantic IDs to referenced roots, colliders and anchor Empties.
   USD object names use those IDs. Collection groups and object parents are retained;
   the first alphabetical collection owns objects linked into multiple collections.
@@ -60,6 +65,19 @@ damping and max_force. Zero stiffness allows passive damped motion. Engine-speci
 rigid-body damping, articulation roots and nonzero initial joint coordinates are
 not authored by this version. Connected-body collision settings do not justify
 removing surrounding collisions to hide installation defects.
+
+## Appearance mapping
+
+Use native Blender USD export for supported material and lighting data. Apply
+any required target-renderer mapping reproducibly through the shared delivery
+pipeline, before final validation/publication. The resolved material and lighting
+intent controls this mapping; file-format fallbacks and Blender preview powers
+are not target-renderer specifications.
+
+The formal lighting guidance defines default environment attributes and explicit
+overrides. An untextured environment uses direct light color/intensity attributes
+and has no effective texture asset, including through composition. Only textures
+referenced by the final delivery belong in `exports/textures/`.
 
 ## Outputs
 
@@ -101,6 +119,22 @@ bounds and resolves actual semantic paths. The final USD is reopened to check un
 mesh topology, hierarchy, masses, material bindings, joint targets and initial frames,
 limits and missing resources. Results are merged into review/report.json without
 hashes or repeated scene data. The build fails if checks fail.
+
+Appearance acceptance additionally compares the effective bound shaders and
+lighting against the resolved source/specification:
+
+- Surface metallic response, roughness, color/normal texture connections, UVs
+  and color spaces express the intended materials, including mixed-material assets.
+- The environment's type, color, intensity, exposure, color-temperature setting
+  and texture presence match its resolved configuration; local lights match
+  their specified placement and output settings.
+- Referenced texture assets resolve, and untextured environments have no effective
+  environment texture binding.
+
+These are authoring/review requirements, not a claim that `validate_usd.py`
+automatically compares workspace appearance intent. Inspect the final USD for
+them and record the result in the same review/report.json. Attribute conformance
+and visual acceptance in the target renderer are recorded separately.
 
 The user opens scene.usdc in Isaac Sim, verifies lighting/materials and collisions,
 then tests settling, joint travel and task interaction. Static checks do not certify

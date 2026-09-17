@@ -1,53 +1,69 @@
-# Initial scene lighting
+# Formal scene lighting
 
-Choose useful formal lighting during modeling. Record the intended renderer and
-keep environment and room-light settings together in the workspace specification
-(for example specs/lighting.yaml), with defaults and explicit room overrides.
-Use the same source settings on subsequent exports; avoid simulator-only fixes.
+## Resolve intent before modeling
 
-## Choosing the initial setup
+Record the intended renderer, environment lighting and local lights together in
+`specs/lighting.yaml`. Resolve unspecified settings with the defaults below;
+explicit user requirements and scene-specific settings take precedence. Keep
+Blender preview parameters and target USD parameters separately identified so
+each renderer receives a deliberate configuration.
 
-- Establish environment lighting and room lighting separately. Environment light
-  supplies exterior illumination and light through openings; enclosed rooms need
-  their own fixtures. Diagnostic lights must not substitute for formal lighting.
-- Size the room-light setup for room area, ceiling height, fixture count and
-  placement. A larger room may need multiple fixtures or greater output rather
-  than the same single light and intensity used in a small room.
-- Consider light type, intensity, exposure, emitting area and normalize together.
-  USD exposure zero is neutral (the multiplier is 2^exposure). With normalize
-  disabled, changing emitter area also changes total output. Blender light power
-  and USD intensity are not interchangeable numbers across renderers.
-- Keep emitting surfaces outside opaque fixture geometry, walls and ceilings;
-  orient them toward the intended space. Increasing intensity cannot fix an
-  incorrectly placed or obstructed emitter.
-- An environment EXR contributes color and directional radiance; intensity and
-  exposure scale it. EXR format alone does not imply a bright HDR environment.
-  A one-pixel color texture is a uniform environment, not a detailed sky HDRI.
-- Start from settings previously accepted under comparable renderer, exposure,
-  texture and light-size conditions. Record those conditions and distinguish
-  user-confirmed values from provisional tuning. Do not mandate one universal
-  intensity for every renderer or environment map.
+## Default environment
 
-## Apartment experience
+Unless otherwise specified, use one untextured, neutral white DomeLight with
+intensity 1000, exposure 0 and color temperature disabled. A pure-color
+environment is expressed directly as light attributes, with no EXR/HDR image.
 
-In apartment_rebuild, Blender World strength 0.3 exported to a DomeLight with a
-one-pixel blue-gray EXR. The user found it ineffective as environment fill in
-Isaac Sim and reported that intensity around 1000 gave a better effect. This is
-a case-specific starting reference; camera/render exposure was not recorded.
+The following illustrates the resolved USD intent in the workspace lighting
+specification. It is an authoring convention, not an automatically consumed
+runtime schema; source/export code must implement the recorded values.
 
-The original room setup used RectLights with intensity 1500, exposure 0,
-normalize false and 1 m by 1 m emitters. The user reported insufficient brightness,
-particularly in larger rooms. Subsequent provisional intensities were 2500–15000
-by room (living room 15000); these were not all visually confirmed by the user.
-Reuse the lesson of renderer-aware, room-specific initialization, not these
-numbers without their context.
+```yaml
+target_renderer: Isaac Sim
+usd:
+  environment:
+    type: DomeLight
+    color: [1, 1, 1]
+    intensity: 1000
+    exposure: 0
+    enable_color_temperature: false
+    texture: null
+```
 
-## First visual calibration
+When the task calls for an HDRI, a particular environment color or different
+intensity, record that override explicitly. A textured environment includes its
+asset path, orientation and intensity/exposure settings. A visual background
+asset and the lighting environment are separate choices; selecting a background
+does not by itself request an environment texture.
 
-Inspect representative small and large rooms using formal lights, intact ceilings
-and intended viewing conditions. Check readable surfaces, dark corners and clipped
-highlights. Keep camera/render exposure consistent while comparing light changes.
-Blender appearance alone cannot certify Isaac Sim appearance: have the user check
-the target renderer, then put accepted values back in the workspace source.
-Rerender only affected illumination views, following review-scene's evidence reuse
-rules; no separate lighting report or automatic image archive is needed.
+## Build local illumination
+
+Environment light supplies broad ambient illumination. Add formal local lights
+according to room size, openings, fixtures, occlusion and task-surface needs.
+Enclosed rooms still need useful illumination when the shell is intact.
+
+Choose light type, emitting area, orientation, intensity, exposure and normalize
+together. Place emitters outside opaque fixture geometry and aim them at the
+intended space. USD exposure zero is neutral; exposure scales output by
+`2^exposure`. With normalize disabled, emitter area also affects total output.
+Blender watts/World strength and USD intensity are distinct renderer parameters.
+
+Keep formal lights outside `__REVIEW__`. Review cameras use formal illumination
+for appearance acceptance; diagnostic lights are only for geometry inspection.
+
+## Carry intent through delivery
+
+Implement materials and lights in editable source and map target settings through
+the shared USD delivery pipeline. For the default environment, author
+`inputs:color`, `inputs:intensity`, `inputs:exposure` and
+`inputs:enableColorTemperature` from the resolved specification, with no effective
+`inputs:texture:file` asset. Package only textures referenced by the final scene.
+When composition contains a weaker texture opinion, clear or override it so the
+composed environment is actually untextured.
+
+Inspect final USD attributes against the specification, then review representative
+task surfaces and enclosed spaces in the intended renderer. Keep camera/render
+exposure consistent while comparing views. Record accepted adjustments in the
+specification and source, and rerender only affected evidence. Attribute checks,
+Blender appearance and user-confirmed Isaac Sim appearance are distinct evidence;
+record them in the existing `review/report.json`.
