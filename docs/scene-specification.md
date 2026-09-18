@@ -21,6 +21,15 @@ The runtime owns clean-scene reset, standard collections, review rigs,
 validation, rendering, and saving. The authored script owns topology, modifiers,
 materials, object hierarchy, and modeling strategy.
 
+`context.register` assigns an entity ID and role; its `members` receive the
+entity's `semantic_owner`. Use
+`context.register_reference(part, reference_id, owner=entity_id)` to address an
+internal rigid root, collider or joint anchor in `physics.yaml`. References carry
+ownership and a stable `reference_id`, while task roles belong to entities.
+The author establishes parenting before export. See
+[USD physics](usd-physics.md#entity-and-representation-hierarchy) for shared meshes
+and separate visual/collision representations.
+
 ## Appearance intent
 
 Resolve surface materials per asset/part and formal lighting before modeling.

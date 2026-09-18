@@ -7,8 +7,9 @@ materials:
     dynamic_friction: 0.5
     restitution: 0.0
 default_material: default
-# References below use registered Blender semantic IDs, not guessed USD paths.
+# References use registered Blender entity or internal reference IDs.
 # Each dynamic body must have a distinct root with its collider descendants.
+# Shared visual/collision meshes remain visible; dedicated proxies set hide_visual: true.
 bodies: []
 joints: []
 # Explicitly list semantic roots intended only for appearance.

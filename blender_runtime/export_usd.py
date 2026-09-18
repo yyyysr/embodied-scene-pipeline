@@ -25,9 +25,13 @@ def main():
     review = bpy.data.collections.get("__REVIEW__")
     excluded = set(review.all_objects) if review else set()
     objects = [o for o in scene.objects if o not in excluded]
-    ids = [str(o["semantic_id"]) for o in objects if o.get("semantic_id")]
+    ids = [
+        str(o.get("reference_id") or o.get("semantic_id"))
+        for o in objects
+        if o.get("reference_id") or o.get("semantic_id")
+    ]
     if len(ids) != len(set(ids)):
-        raise ValueError("Duplicate semantic IDs")
+        raise ValueError("Duplicate object IDs")
     # Re-enable full geometry hidden for cutaway review. Selection defines export scope.
     for collection in bpy.data.collections:
         collection.hide_viewport = False
@@ -84,14 +88,14 @@ def main():
     for obj in objects:
         if obj.parent in excluded:
             raise ValueError(f"Export object {names[obj]} has a review-only parent")
-        semantic_id = obj.get("semantic_id")
-        token = str(semantic_id or re.sub(r"[^A-Za-z0-9_]", "_", names[obj]))
+        object_id = obj.get("reference_id") or obj.get("semantic_id")
+        token = str(object_id or re.sub(r"[^A-Za-z0-9_]", "_", names[obj]))
         if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", token):
-            if semantic_id:
-                raise ValueError(f"semantic_id is not a valid USD identifier: {token}")
+            if object_id:
+                raise ValueError(f"Object ID is not a valid USD identifier: {token}")
             token = "object_" + token
         if token in export_tokens:
-            raise ValueError(f"Ambiguous USD object name: {token}; assign unique semantic_id")
+            raise ValueError(f"Ambiguous USD object name: {token}; assign a unique object ID")
         export_tokens.add(token)
         obj.name = token
         if obj.data is not None:
@@ -103,6 +107,7 @@ def main():
                 "blender_name": names[obj],
                 "export_name": token,
                 "semantic_id": obj.get("semantic_id"),
+                "reference_id": obj.get("reference_id"),
                 "type": obj.type,
                 "parent_semantic_id": obj.parent.get("semantic_id") if obj.parent else None,
             }

@@ -31,6 +31,31 @@ def workspace(tmp_path):
     return tmp_path
 
 
+def test_preview_uses_explicit_collider_visibility(tmp_path, monkeypatch):
+    import json
+    from types import SimpleNamespace
+    from embodied_scene import editor
+
+    (tmp_path / "specs").mkdir()
+    (tmp_path / "specs/physics.yaml").write_text(yaml.safe_dump({"bodies": [{
+        "object": "entity", "colliders": [
+            {"object": "shared_mesh"},
+            {"object": "visible_mesh", "hide_visual": False},
+            {"object": "proxy", "hide_visual": True},
+        ],
+    }]}))
+
+    def export(*args, **kwargs):
+        settings = json.loads((tmp_path / "preview-settings.json").read_text())
+        assert settings == {"hidden": ["proxy"]}
+        (tmp_path / "preview-next.glb").write_bytes(b"preview")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(editor.subprocess, "run", export)
+    editor.prepare_preview(tmp_path, tmp_path, "blender")
+    assert (tmp_path / "preview.glb").read_bytes() == b"preview"
+
+
 def test_save_roundtrip_conflict_and_no_sidecars(workspace):
     with TestClient(create_app(workspace, "blender")) as client:
         original = client.get("/api/scene").json()

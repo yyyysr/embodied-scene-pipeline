@@ -52,8 +52,8 @@ reuse dimensions from an unrelated scene.
   compartments and shelves; a front-loading washer's front panel with a circular
   aperture, seal, recessed open drum wall and back. A washer is not a cupboard.
 - Preserve operating gaps and a usable loading opening in both visual geometry
-  and collision geometry. A convex hull around a hollow shell closes its cavity;
-  use separate convex parts or supported static triangle meshes as appropriate.
+  and collision geometry. Select the collision representation using
+  [the shared physics guidance](../../../../docs/usd-physics.md#choosing-collision-geometry).
 - Choose whether the appliance body is installed/static or movable explicitly.
   Connect a moving door to its actual body when that body is dynamic; do not
   silently immobilize an appliance merely to simplify joint authoring.

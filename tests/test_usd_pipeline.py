@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 
 import yaml
-from pxr import Gf, Usd, UsdGeom, UsdPhysics
+from pxr import Gf, Usd, UsdGeom, UsdPhysics, UsdShade
 
 from embodied_scene.usd.pipeline import author_physics, build_object_map
 
@@ -100,6 +100,48 @@ def test_mapping_is_recomputed_not_loaded(tmp_path):
     spec = fixture(tmp_path)
     (tmp_path / "object_map.json").write_text('{"objects":{"door":"/BadPath"}}')
     assert run(tmp_path, spec)["status"] == "pass"
+
+
+def test_internal_reference_and_decomposition_export(tmp_path):
+    spec = fixture(tmp_path)
+    geometry = Usd.Stage.Open(str(tmp_path / "geometry.usdc"))
+    group = UsdGeom.Xform.Define(geometry, "/World/door/Colliders")
+    proxy = UsdGeom.Mesh.Define(geometry, group.GetPath().AppendChild("door_proxy"))
+    source = UsdGeom.Mesh.Get(geometry, "/World/door/shape")
+    proxy.CreatePointsAttr(source.GetPointsAttr().Get())
+    proxy.CreateFaceVertexCountsAttr(source.GetFaceVertexCountsAttr().Get())
+    proxy.CreateFaceVertexIndicesAttr(source.GetFaceVertexIndicesAttr().Get())
+    geometry.GetRootLayer().Save()
+    records_path = tmp_path / "blender_objects.json"
+    records = json.loads(records_path.read_text())
+    records["objects"].append({"reference_id": "door_proxy", "export_name": "door_proxy"})
+    records_path.write_text(json.dumps(records))
+    mapping = build_object_map(tmp_path)
+    assert mapping["objects"]["door_proxy"] == str(proxy.GetPath())
+    spec["bodies"][1]["colliders"] = [{
+        "object": "door_proxy", "approximation": "convexDecomposition", "hide_visual": True,
+    }]
+    assert run(tmp_path, spec)["status"] == "pass"
+    stage = Usd.Stage.Open(str(tmp_path / "scene.usdc"))
+    collider = stage.GetPrimAtPath(proxy.GetPath())
+    assert UsdPhysics.MeshCollisionAPI(collider).GetApproximationAttr().Get() == "convexDecomposition"
+    assert UsdGeom.Imageable(collider).ComputeVisibility() == "invisible"
+    assert UsdGeom.Imageable(stage.GetPrimAtPath("/World/door/shape")).ComputeVisibility() == "inherited"
+    material, _ = UsdShade.MaterialBindingAPI(collider).ComputeBoundMaterial("physics")
+    assert material.GetPrim().HasAPI(UsdPhysics.MaterialAPI)
+
+    # The same render mesh can instead serve as the collider, without a duplicate.
+    spec["bodies"][1]["colliders"] = [{
+        "object": "door", "approximation": "convexDecomposition",
+    }]
+    geometry.RemovePrim(group.GetPath())
+    geometry.GetRootLayer().Save()
+    assert run(tmp_path, spec)["status"] == "pass"
+    stage = Usd.Stage.Open(str(tmp_path / "scene.usdc"))
+    stage.Reload()
+    mesh = stage.GetPrimAtPath("/World/door/shape")
+    assert mesh.HasAPI(UsdPhysics.CollisionAPI)
+    assert UsdGeom.Imageable(mesh).ComputeVisibility() == "inherited"
 
 
 def test_schema_rejects_negative_mass_and_unknown_keys(tmp_path):

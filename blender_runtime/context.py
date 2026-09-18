@@ -21,6 +21,7 @@ class BuildContext:
         self.workspace = workspace.resolve()
         self.scene_spec = scene_spec
         self.registry: dict[str, object] = {}
+        self.references: dict[str, object] = {}
         self.review_checks: list[dict] = []
         floorplan = scene_spec.get("floorplan", {})
         self.structure = StructureContract(scene_spec["id"], floorplan.get("status", "unspecified"))
@@ -40,8 +41,8 @@ class BuildContext:
         members: Iterable | None = None,
     ) -> None:
         """Register one semantic root and optionally its Blender child objects."""
-        if semantic_id in self.registry:
-            raise ValueError(f"Duplicate semantic ID: {semantic_id}")
+        if semantic_id in self.registry or semantic_id in self.references:
+            raise ValueError(f"Duplicate object ID: {semantic_id}")
         if role not in ROLE_COLLECTIONS:
             raise ValueError(f"Unsupported semantic role: {role}")
 
@@ -52,9 +53,22 @@ class BuildContext:
             if member == obj:
                 continue
             member["semantic_owner"] = semantic_id
-            member["semantic_role"] = role
             self._move_to_collection(member, ROLE_COLLECTIONS[role])
         self.registry[semantic_id] = obj
+
+    def register_reference(self, obj, reference_id: str, *, owner: str) -> None:
+        """Address an internal body, collider or anchor without declaring an entity.
+
+        The author owns parenting, including Visual/Colliders groups. References
+        share the entity ID namespace used by physics.yaml.
+        """
+        if reference_id in self.registry or reference_id in self.references:
+            raise ValueError(f"Duplicate object ID: {reference_id}")
+        entity = self.registry[owner]
+        obj["reference_id"] = reference_id
+        obj["semantic_owner"] = owner
+        self._move_to_collection(obj, ROLE_COLLECTIONS[entity["semantic_role"]])
+        self.references[reference_id] = obj
 
     def register_room(
         self,

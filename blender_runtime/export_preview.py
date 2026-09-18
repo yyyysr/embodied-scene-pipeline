@@ -9,7 +9,6 @@ import bpy
 output, settings_path = sys.argv[sys.argv.index("--") + 1 :]
 settings = json.loads(Path(settings_path).read_text())
 hidden = set(settings["hidden"])
-display_bodies = set(settings["display_bodies"])
 review = bpy.data.collections.get("__REVIEW__")
 excluded = set(review.all_objects) if review else set()
 bpy.context.scene.frame_set(1)
@@ -40,10 +39,8 @@ for obj in bpy.context.scene.objects:
     while current:
         ancestors.append(current)
         current = current.parent
-    ids = {str(o.get("semantic_id", o.name)) for o in ancestors}
+    ids = {str(o.get("reference_id") or o.get("semantic_id") or o.name) for o in ancestors}
     if ids & hidden:
-        continue
-    if ids & display_bodies and any(o.name.endswith("_visual") for o in ancestors):
         continue
     obj.select_set(True)
 

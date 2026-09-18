@@ -89,6 +89,7 @@
                   "enum": [
                     "none",
                     "convexHull",
+                    "convexDecomposition",
                     "boundingCube",
                     "boundingSphere"
                   ]

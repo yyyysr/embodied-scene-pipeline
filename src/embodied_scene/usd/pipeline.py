@@ -23,7 +23,7 @@ def build_object_map(exports: Path, *, debug: bool = False) -> dict:
     errors = []
     checked_meshes = 0
     for record in records:
-        semantic_id = record.get("semantic_id")
+        object_id = record.get("reference_id") or record.get("semantic_id")
         candidates = [p for p in stage.Traverse() if p.GetName() == record["export_name"]]
         if len(candidates) != 1:
             raise ValueError(f"Expected one exported object for {record['export_name']}")
@@ -52,11 +52,11 @@ def build_object_map(exports: Path, *, debug: bool = False) -> dict:
                 ):
                     errors.append(f"World bounds mismatch: {record['blender_name']}")
             checked_meshes += 1
-        if not semantic_id:
+        if not object_id:
             continue
-        if semantic_id in mapping:
-            raise ValueError(f"Duplicate semantic ID: {semantic_id}")
-        mapping[semantic_id] = str(candidates[0].GetPath())
+        if object_id in mapping:
+            raise ValueError(f"Duplicate object ID: {object_id}")
+        mapping[object_id] = str(candidates[0].GetPath())
     if UsdGeom.GetStageUpAxis(stage) != "Z" or UsdGeom.GetStageMetersPerUnit(stage) != 1:
         errors.append("Geometry must be meters and Z-up")
     if errors:

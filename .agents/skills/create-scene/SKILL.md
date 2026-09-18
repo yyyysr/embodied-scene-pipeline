@@ -38,8 +38,9 @@ description: Create or rebuild an embodied-AI Blender scene from a task descript
    preserve these decisions through the USD delivery mapping.
 10. Build from a clean scene and save generated results under `build/`.
 11. Prepare `specs/physics.yaml` and physical assembly hierarchy during modeling,
-    following `docs/usd-physics.md`. Give colliders and anchors stable semantic IDs;
-    preserve cavities and distinguish installed fixtures from movable assets.
+    following the hierarchy and collision selection guidance in `docs/usd-physics.md`.
+    Register entities separately from internal geometry references; choose shared
+    meshes or dedicated proxies according to contact needs and functional space.
 12. Invoke `review-scene` for geometry/visual review, then `export-scene` for final
     USD delivery. The shared run_blender.py command runs build and export together;
     use --geometry-only only when the user requests that boundary.

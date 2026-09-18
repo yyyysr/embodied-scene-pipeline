@@ -25,18 +25,13 @@ from embodied_scene.usd.delivery import export_scene
 
 def prepare_preview(workspace, temporary, blender):
     physics = load_yaml(workspace / "specs/physics.yaml")
-    hidden, display_bodies = [], []
+    hidden = []
     for body in physics["bodies"]:
-        visible = False
         for collider in body.get("colliders", []):
-            if collider.get("hide_visual", True):
+            if collider.get("hide_visual", False):
                 hidden.append(collider["object"])
-            else:
-                visible = True
-        if visible:
-            display_bodies.append(body["object"])
     settings = temporary / "preview-settings.json"
-    settings.write_text(json.dumps({"hidden": hidden, "display_bodies": display_bodies}))
+    settings.write_text(json.dumps({"hidden": hidden}))
     candidate = temporary / "preview-next.glb"
     try:
         result = subprocess.run(

@@ -10,7 +10,7 @@ specifications. Resolve material and lighting intent before export using the
 material normalization guidance in `docs/generated-assets.md` and the defaults
 in [../create-scene/references/lighting.md](../create-scene/references/lighting.md).
 
-Check source readiness: stable semantic IDs, complete body membership, useful joint
+Check source readiness: stable entity/reference IDs, complete body membership, useful joint
 frames, cavity-preserving collisions, and actual lights outside __REVIEW__. Repair
 source or configuration if missing; do not invent a parallel JSON scene description.
 Opening an asset must already reveal its intended functional interior in Blender;
@@ -19,6 +19,8 @@ Map the resolved surface materials and target-renderer light settings into USD.
 Use Blender's native exporter for supported data and reproducible source-backed
 adaptation through the shared delivery pipeline where mapping is needed. Blender
 preview light power and file-format material fallbacks do not define delivery intent.
+Use the representation hierarchy and explicit collider visibility defined in
+`docs/usd-physics.md` when preparing source geometry and physics configuration.
 
 Use the shared entry point:
 

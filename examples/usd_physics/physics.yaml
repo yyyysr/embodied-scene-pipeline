@@ -20,7 +20,8 @@ bodies:
     object: door
     type: dynamic
     mass_kg: 5
-    colliders: [{object: door_panel, approximation: convexHull}]
+    # A visible mesh can provide its own collision representation.
+    colliders: [{object: door_panel, approximation: convexHull, hide_visual: false}]
   - id: drawer
     object: drawer
     type: dynamic

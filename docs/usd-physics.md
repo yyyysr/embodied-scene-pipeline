@@ -29,8 +29,10 @@ missing physics must not silently produce a supposedly simulation-ready scene.
   using [generated-assets.md](generated-assets.md#material-intent-and-normalization)
   and lighting using the [formal lighting guidance](../.agents/skills/create-scene/references/lighting.md).
   Keep target USD settings distinct from Blender preview parameters.
-- Assign unique semantic IDs to referenced roots, colliders and anchor Empties.
-  USD object names use those IDs. Collection groups and object parents are retained;
+- Register semantic entities with `context.register` and address internal bodies,
+  colliders and anchor Empties with `context.register_reference(..., owner=entity_id)`.
+  Entity IDs and reference IDs share a unique namespace; USD object names use those
+  IDs. Collection groups and object parents are retained;
   the first alphabetical collection owns objects linked into multiple collections.
 - Parent each moving part's meshes beneath a single rigid root. Registration adds
   metadata, not parenting. Nested rigid roots are unsupported. Moving roots and
@@ -43,18 +45,66 @@ missing physics must not silently produce a supposedly simulation-ready scene.
 
 ## Physics configuration
 
-Use templates/physics.yaml and schemas/physics.schema.json. References are semantic
-IDs rather than saved USD paths. Shared material defaults can be overridden per
-body or collider. Do not guess missing body classifications from object names.
+Use templates/physics.yaml and schemas/physics.schema.json. Object references use
+registered entity or internal reference IDs rather than saved USD paths. Existing
+semantic IDs remain supported. Shared material defaults can be overridden per
+body or collider. Body classifications are explicit in the specification.
 
 Static architecture and mounted objects receive collision only, no mass.
 Dynamic/kinematic bodies require positive mass_kg. Kinematic motion must be supplied
 by the simulator. Colliders explicitly reference a mesh or a root containing one
-mesh, within their body. `none` triangle meshes are static-only; supported dynamic
-approximations are convexHull, boundingCube and boundingSphere. Model compound
-convex proxies when a hull would close an interior or hand-access gap. Mark proxy
-meshes hide_visual=true; keep visual meshes as siblings. Total mass is configured;
+mesh, within their body. `none` triangle meshes are static-only in this pipeline;
+supported dynamic approximations are convexHull, convexDecomposition, boundingCube
+and boundingSphere. Total mass is configured;
 center of mass and inertia are currently derived by the simulator.
+
+### Entity and representation hierarchy
+
+A semantic entity identifies a task or scene object. A rigid root identifies the
+parts that move together. Visual and collision geometry are representations owned
+by that entity; internal reference IDs make them addressable without assigning
+them independent task roles. Each independently simulated particle can retain its
+own entity and rigid root.
+
+For an asset with dedicated proxies, organize `Visual` and `Colliders` as sibling
+groups beneath its rigid root. The author creates these groups and parents the
+parts in Blender; registration only adds identity and ownership metadata. Collision
+pieces remain descendants of the rigid root through the `Colliders` group. An
+articulated entity may contain several sibling rigid roots, each with its own
+representations.
+
+A mesh can also provide both appearance and collision directly. Use this shared
+mesh when its geometry is a suitable input to the chosen approximation. Dedicated
+proxies provide independently authored contact geometry where useful.
+
+### Choosing collision geometry
+
+Choose geometry according to the required contact surface, functional free space
+and simulation cost. Collider count follows those requirements.
+
+| Shape and contact needs | Representation |
+| --- | --- |
+| Box-like or spherical objects | boundingCube or boundingSphere on the mesh |
+| Approximately convex movable objects | Shared visual mesh with convexHull |
+| Concave movable objects | convexDecomposition on a suitable mesh |
+| Functional openings, interiors or selected contact regions | Authored compound convex proxies |
+| Complex static surfaces | Triangle mesh with none |
+
+Convex decomposition requests a set of convex shapes from the simulation backend;
+the exported mesh remains intact. Its suitability for a cavity or contact region
+is assessed during visual and dynamic review. For organic assets, selected contact
+regions can be represented by a few authored proxies. Continuous container shells
+can use decomposition or compound proxies according to the required interior
+surface. Input geometry and approximation are chosen together.
+
+Keep visual geometry visible. Dedicated collision proxies use `hide_visual: true`;
+shared visual/collision meshes use `hide_visual: false` (the field default).
+Preview and USD delivery use this explicit setting. A collider's physics material
+describes contact behavior independently of its surface material.
+
+SDF is a possible target-specific option for detailed concave contact. The PhysX
+SDF schema requires a separate backend integration and is outside the current
+standard-USD configuration supported by this pipeline.
 
 Fixed, revolute and prismatic joints connect dynamic body1 to optional body0.
 An omitted/static body0 attaches to world. `anchor` supplies the initial world joint
@@ -140,15 +190,6 @@ The user opens scene.usdc in Isaac Sim, verifies lighting/materials and collisio
 then tests settling, joint travel and task interaction. Static checks do not certify
 simulation stability, full-range clearance, robot usability or rendering. Repair
 source/configuration and rebuild; never accept a simulator-only edit as the source.
-
-## Existing apartment migration
-
-The apartment's prepared Blender assembly and physics.yaml remain editable sources.
-Its source/build_physics.py is now a thin shared-pipeline call. The previously
-accepted lighting adaptation runs as an in-memory callback; it does not emit a
-lighting layer/report. This is retained solely for the existing case, not generated
-for new scenes. The unresolved light-occlusion/appearance issue remains pending;
-output consolidation does not change lighting parameters or certify its effect.
 
 Older export_usd.py and author_physics.py commands are compatibility names for the
 new export_scene.py interface (workspace argument), not separate export stages.

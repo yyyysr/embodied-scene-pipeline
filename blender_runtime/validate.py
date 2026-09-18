@@ -56,11 +56,6 @@ def validate_scene(
             "suggested_fix": "Correct dimensions in the source specification.",
         })
 
-    task_ids = {
-        obj.get("semantic_id")
-        for obj in semantic_objects
-        if obj.get("semantic_role") == "task"
-    }
     missing_articulation = []
     # A manipulated object can be a free body (cup, tray), not an articulation.
     # Joint requirements are checked against physics.yaml in the USD phase.
@@ -81,29 +76,6 @@ def validate_scene(
             "entity_id": semantic_id,
             "message": "Task entity has no authored articulation metadata.",
             "suggested_fix": "Add a movable child/root with local axis, parent body, and limits.",
-        })
-
-    cavity_entities = {
-        "living_tv_console_drawers",
-        "kitchen_drawers",
-        "master_wardrobe_doors",
-    }
-    missing_cavities = []
-    for semantic_id in sorted(cavity_entities & task_ids):
-        related_names = {
-            obj.name.lower()
-            for obj in bpy.data.objects
-            if obj.get("semantic_id") == semantic_id or obj.get("semantic_owner") == semantic_id
-        }
-        required_tokens = ("bottom", "left_side", "right_side", "back")
-        if not all(any(token in name for name in related_names) for token in required_tokens):
-            missing_cavities.append(semantic_id)
-    for semantic_id in missing_cavities:
-        findings.append({
-            "severity": "blocking",
-            "entity_id": semantic_id,
-            "message": "Articulated casework is missing a verifiable hollow-shell panel set.",
-            "suggested_fix": "Model bottom, side, and back panels around the revealed cavity.",
         })
 
     task_checks = task_checks or []
@@ -129,7 +101,6 @@ def validate_scene(
             "required_rooms_resolved": not bool(expected_room_ids - contract_room_ids),
             "positive_mesh_dimensions": not bool(invalid_scale),
             "task_articulation_authored": not bool(missing_articulation),
-            "articulated_casework_hollow": not bool(missing_cavities),
             "task_clearances": all(check["passed"] for check in task_checks),
         },
         "task_checks": task_checks,
