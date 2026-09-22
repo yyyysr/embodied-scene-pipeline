@@ -82,6 +82,10 @@ def add_review_cameras(scene_spec: dict | None = None) -> dict[str, object]:
         ),
     }
     for view, (location, target, lens) in definitions.items():
+        authored = bpy.data.objects.get(f"review_camera__{view}")
+        if authored is not None and authored.type == "CAMERA":
+            cameras[view] = authored
+            continue
         data = bpy.data.cameras.new(f"review_camera__{view}")
         camera = bpy.data.objects.new(f"review_camera__{view}", data)
         review.objects.link(camera)
@@ -93,6 +97,13 @@ def add_review_cameras(scene_spec: dict | None = None) -> dict[str, object]:
             data.lens = lens
         _point_at(camera, target)
         cameras[view] = camera
+    # Scene scripts may author focused evidence cameras for specific interfaces
+    # (drawer travel, brick coupling, collision source). They remain review-only
+    # and are selected by SCENE_REVIEW_VIEWS without hard-coding scene IDs here.
+    for obj in bpy.data.objects:
+        if obj.type == "CAMERA" and obj.name.startswith("review_camera__"):
+            view = obj.name.removeprefix("review_camera__")
+            cameras.setdefault(view, obj)
     for room in (scene_spec or {}).get("rooms", []):
         polygon = room.get("floor_polygon")
         if not polygon:

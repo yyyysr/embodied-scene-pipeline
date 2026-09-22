@@ -20,6 +20,8 @@ def _scene_bounds():
 
 
 def add_review_lighting() -> None:
+    if bpy.context.scene.get("review_use_formal_lighting", False):
+        return
     review = bpy.data.collections["__REVIEW__"]
     world = bpy.context.scene.world or bpy.data.worlds.new("World")
     bpy.context.scene.world = world
@@ -30,8 +32,18 @@ def add_review_lighting() -> None:
     span = max(upper.x - lower.x, upper.y - lower.y, 2.0)
 
     for name, location, energy, size in (
-        ("key", (center.x - span * 0.25, center.y - span * 0.2, upper.z + 2.2), 1800.0, span * 0.65),
-        ("fill", (center.x + span * 0.3, center.y + span * 0.15, upper.z + 1.4), 1200.0, span * 0.5),
+        (
+            "key",
+            (center.x - span * 0.25, center.y - span * 0.2, upper.z + 2.2),
+            1800.0,
+            span * 0.65,
+        ),
+        (
+            "fill",
+            (center.x + span * 0.3, center.y + span * 0.15, upper.z + 1.4),
+            1200.0,
+            span * 0.5,
+        ),
     ):
         data = bpy.data.lights.new(f"review_light__{name}", type="AREA")
         data.energy = energy

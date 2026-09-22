@@ -114,7 +114,11 @@ def main() -> None:
         "room_views": room_views,
         "room_inside_views": room_inside_views,
         "global_views": [view for view in ("overview", "top", "task") if view in cameras],
-        "articulation_views": {"representative_open_state": "articulation_open.png"},
+        "articulation_views": (
+            {"representative_open_state": "articulation_open.png"}
+            if bpy.context.scene.get("review_articulation", True)
+            else {}
+        ),
     }
     if set(room_views) != set(expected_room_ids):
         report["status"] = "needs_repair"

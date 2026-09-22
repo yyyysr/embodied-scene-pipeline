@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import bpy
@@ -15,6 +16,10 @@ def configure_render() -> None:
     scene.render.resolution_y = 480
     scene.render.resolution_percentage = 100
     scene.render.image_settings.file_format = "PNG"
+    if scene.get("review_engine"):
+        scene.render.engine = scene["review_engine"]
+    scene.render.resolution_x = scene.get("review_width", 640)
+    scene.render.resolution_y = scene.get("review_height", 480)
 
 
 def render_views(cameras: dict[str, object], output_directory: Path) -> None:
@@ -26,10 +31,17 @@ def render_views(cameras: dict[str, object], output_directory: Path) -> None:
         for obj in ceilings:
             obj.hide_render = True
         for view, camera in cameras.items():
+            selected = os.environ.get("SCENE_REVIEW_VIEWS", "all").split(",")
+            if "all" not in selected and view not in selected:
+                continue
             bpy.context.scene.camera = camera
             bpy.context.scene.render.filepath = str(output_directory / f"{view}.png")
             bpy.ops.render.render(write_still=True)
-        if "task" in cameras:
+        if (
+            "task" in cameras
+            and bpy.context.scene.get("review_articulation", True)
+            and os.environ.get("SCENE_REVIEW_VIEWS", "all") == "all"
+        ):
             _render_articulation_view(cameras["task"], output_directory)
     finally:
         for obj in ceilings:
