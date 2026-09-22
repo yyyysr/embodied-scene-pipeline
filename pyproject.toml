@@ -14,6 +14,9 @@ dependencies = [
   "usd-convert-gsplat[usd]==0.1.15",
   "Pillow>=10.4",
   "numpy>=1.26",
+  "coacd==1.0.14",
+  "trimesh>=4.4,<5",
+  "scipy>=1.11",
 ]
 
 [project.optional-dependencies]

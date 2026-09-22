@@ -11,6 +11,8 @@ default_material: default
 # Each dynamic body must have a distinct root with its collider descendants.
 # Shared visual/collision meshes remain visible; dedicated proxies set hide_visual: true.
 bodies: []
+# Concave source: {object: plate, approximation: coacd, parameters: {threshold_m: 0.003}}
+# Box-like source: {object: tabletop, approximation: boundingCube}
 joints: []
 # Explicitly list semantic roots intended only for appearance.
 visual_only: []
