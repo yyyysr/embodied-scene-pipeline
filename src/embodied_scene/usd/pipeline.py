@@ -95,7 +95,7 @@ def rigid_transform(stage, path):
     return matrix
 
 
-def _author(spec, exports, mapping=None, *, debug=False):
+def _author(spec, exports, mapping=None, *, debug=False, extension=None):
     geometry = Usd.Stage.Open(str(exports / "geometry.usdc"))
     if not geometry:
         raise ValueError("Cannot open geometry.usdc")
@@ -145,10 +145,16 @@ def _author(spec, exports, mapping=None, *, debug=False):
         api.CreateStaticFrictionAttr(values["static_friction"])
         api.CreateDynamicFrictionAttr(values["dynamic_friction"])
         api.CreateRestitutionAttr(values["restitution"])
+        if "restitution_combine_mode" in values:
+            material.GetPrim().AddAppliedSchema("PhysxMaterialAPI")
+            material.GetPrim().CreateAttribute(
+                "physxMaterial:restitutionCombineMode", Sdf.ValueTypeNames.Token, custom=False
+            ).Set(values["restitution_combine_mode"])
         materials[name] = material
     if spec["default_material"] not in materials:
         raise ValueError("Unknown default material")
     bodies, paths, colliders = {}, {}, set()
+    collider_meshes = set()
     for body in spec["bodies"]:
         name = body["id"]
         path = path_for(body["object"])
@@ -182,20 +188,39 @@ def _author(spec, exports, mapping=None, *, debug=False):
                 if len(meshes) != 1:
                     raise ValueError(f"Collider must identify one mesh: {cp}")
                 cprim = meshes[0]
+            if cprim.GetPath() in collider_meshes:
+                raise ValueError(f"Duplicate resolved collider mesh: {cprim.GetPath()}")
+            collider_meshes.add(cprim.GetPath())
             if body["type"] != "static" and collider["approximation"] == "none":
                 raise ValueError(f"Moving mesh collider requires a convex approximation: {cp}")
-            UsdPhysics.CollisionAPI.Apply(cprim).CreateCollisionEnabledAttr(True)
-            UsdPhysics.MeshCollisionAPI.Apply(cprim).CreateApproximationAttr(
-                collider["approximation"]
-            )
+            targets = [cprim]
+            approximation = collider["approximation"]
+            if approximation == "coacd":
+                from embodied_scene.usd.collision import generate
+                targets = generate(stage, cprim, path, collider)
+                approximation = "convexHull"
             material_name = collider.get("material", body.get("material", spec["default_material"]))
             if material_name not in materials:
                 raise ValueError(f"Unknown physics material: {material_name}")
-            UsdShade.MaterialBindingAPI.Apply(cprim).Bind(
-                materials[material_name], materialPurpose="physics"
-            )
+            for target in targets:
+                UsdPhysics.CollisionAPI.Apply(target).CreateCollisionEnabledAttr(True)
+                UsdPhysics.MeshCollisionAPI.Apply(target).CreateApproximationAttr(approximation)
+                UsdShade.MaterialBindingAPI.Apply(target).Bind(
+                    materials[material_name], materialPurpose="physics"
+                )
+                if "contact_offset_m" in collider or "rest_offset_m" in collider:
+                    contact = collider.get("contact_offset_m")
+                    rest = collider.get("rest_offset_m", 0)
+                    if contact is None or contact <= rest:
+                        raise ValueError("Explicit contact_offset_m must exceed rest_offset_m")
+                    target.AddAppliedSchema("PhysxCollisionAPI")
+                    for attr, value in (("contactOffset", contact), ("restOffset", rest)):
+                        target.CreateAttribute(
+                            "physxCollision:" + attr, Sdf.ValueTypeNames.Float, custom=False
+                        ).Set(value)
             if collider.get("hide_visual", False):
-                UsdGeom.Imageable(cprim).CreateVisibilityAttr("invisible")
+                from embodied_scene.usd.collision import configure_proxy
+                configure_proxy(cprim)
     joint_ids = set()
     for data in spec["joints"]:
         if data["id"] in joint_ids:
@@ -251,6 +276,9 @@ def _author(spec, exports, mapping=None, *, debug=False):
     if any(p.HasPrefix(b) or b.HasPrefix(p) for p in ignored for b in paths.values()):
         raise ValueError("visual_only roots must not overlap physics bodies")
     covered = list(paths.values()) + ignored
+    if extension is not None:
+        from embodied_scene.integrations.isaacsim.config import ownership_paths
+        covered += ownership_paths(extension, stage, mapping, occupied=covered)
     unclassified = [
         str(p.GetPath())
         for p in stage.Traverse()
@@ -258,6 +286,9 @@ def _author(spec, exports, mapping=None, *, debug=False):
     ]
     if unclassified:
         raise ValueError("Unclassified meshes: " + ", ".join(unclassified))
+    if extension is not None:
+        from embodied_scene.integrations.isaacsim.authoring import author
+        author(stage, extension, mapping)
     if debug:
         physics.Export(str(exports / "physics.usda"))
         delivery = Sdf.Layer.CreateAnonymous("delivery.usda")
@@ -278,9 +309,16 @@ def validate_usd(scene_path: Path):
     if UsdGeom.GetStageUpAxis(stage) != "Z" or UsdGeom.GetStageMetersPerUnit(stage) != 1:
         errors.append("Invalid stage units")
     counts = {"bodies": 0, "colliders": 0, "joints": 0, "meshes": 0, "lights": 0}
+    decompositions = {}
     if not stage.GetDefaultPrim():
         errors.append("Missing default prim")
     for prim in stage.Traverse():
+        if prim.GetAttribute("collision:coacd"):
+            from embodied_scene.usd.collision import validate_generated
+            try:
+                decompositions[str(prim.GetPath())] = validate_generated(stage, prim)
+            except (ValueError, RuntimeError) as error:
+                errors.append(str(error))
         if prim.GetTypeName() == "ParticleField3DGaussianSplat":
             from embodied_scene.assembly import validate_splats
 
@@ -323,8 +361,16 @@ def validate_usd(scene_path: Path):
                 parent = parent.GetParent()
         if prim.HasAPI(UsdPhysics.CollisionAPI):
             counts["colliders"] += 1
+            if prim.IsA(UsdGeom.Mesh) and UsdGeom.Imageable(prim).ComputePurpose() == "guide":
+                if UsdGeom.Imageable(prim).ComputeVisibility() != "inherited":
+                    errors.append(f"Guide collider has hidden ancestry: {prim.GetPath()}")
+                for purpose in ("", "preview", "full"):
+                    if UsdShade.MaterialBindingAPI(prim).ComputeBoundMaterial(purpose)[0]:
+                        errors.append(f"Guide collider has visual material: {prim.GetPath()}")
             mat, _ = UsdShade.MaterialBindingAPI(prim).ComputeBoundMaterial("physics")
-            if not mat or not mat.GetPrim().HasAPI(UsdPhysics.MaterialAPI):
+            from embodied_scene.integrations.isaacsim.schema import has_api
+            soft_material = mat and has_api(mat.GetPrim(), "OmniPhysicsDeformableMaterialAPI")
+            if not mat or not (mat.GetPrim().HasAPI(UsdPhysics.MaterialAPI) or soft_material):
                 errors.append(f"Missing physics material: {prim.GetPath()}")
         if prim.IsA(UsdPhysics.Joint):
             counts["joints"] += 1
@@ -371,6 +417,7 @@ def validate_usd(scene_path: Path):
         "status": "fail" if errors else "pass",
         "errors": errors,
         "counts": counts,
+        "collision_generation": decompositions,
         "dynamic_validation": {"status": "pending_user", "simulator": "Isaac Sim"},
         "limitations": [
             (
@@ -395,12 +442,16 @@ def author_stage(spec_path: Path, exports: Path, mapping=None, *, debug=False):
                 finite(item)
 
     finite(spec)
-    return _author(spec, exports, mapping, debug=debug)
+    from embodied_scene.integrations.isaacsim.config import load_extension
+    return _author(spec, exports, mapping, debug=debug, extension=load_extension(spec_path))
 
 
 def author_physics(spec_path: Path, exports: Path):
     """Low-level helper for existing geometry; no sidecar reports or hashes."""
     try:
+        from embodied_scene.integrations.isaacsim.config import load_extension
+        if load_extension(spec_path) is not None:
+            raise ValueError("Isaac Sim extensions require the shared export_scene.py pipeline")
         stage = author_stage(spec_path, exports)
         stage.Flatten().Export(str(exports / "scene.usdc"))
         return validate_usd(exports / "scene.usdc")

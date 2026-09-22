@@ -28,6 +28,14 @@ def update_report(workspace: Path, result: dict) -> None:
             "findings": [],
         }
     )
+    previous_dynamic = report.get("usd", {}).get("dynamic_validation", {})
+    if previous_dynamic.get("status") not in (None, "pending_user"):
+        result = dict(result)
+        result["dynamic_validation"] = {
+            "status": "pending_user", "simulator": "Isaac Sim",
+            "reason": "Re-export requires re-acceptance; previous evidence retained for reference only",
+            "previous_evidence": previous_dynamic.get("previous_evidence", previous_dynamic),
+        }
     report["usd"] = result
     report["checks"]["usd"] = result["status"] == "pass"
     report["status"] = (
@@ -82,7 +90,7 @@ def flatten_with_assets(stage, directory: Path) -> Path:
     return path
 
 
-def publish_stage(stage, output: Path) -> dict:
+def publish_stage(stage, output: Path, *, validate_extension=None) -> dict:
     """Validate staged output before replacing a previous managed delivery."""
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -103,6 +111,13 @@ def publish_stage(stage, output: Path) -> dict:
         result = validate_usd(path)
         if result["status"] != "pass":
             return result
+        if validate_extension is not None:
+            extension = validate_extension(path)
+            result["isaacsim"] = extension
+            if extension["status"] != "pass":
+                result["status"] = "fail"
+                result["errors"].extend(extension.get("errors", ["Isaac Sim validation failed"]))
+                return result
         previous = temporary / "previous"
         if output.exists():
             os.replace(output, previous)
@@ -125,6 +140,8 @@ def export_scene(
             raise ValueError(f"Missing Blender scene: {blend}")
         if not physics.is_file():
             raise ValueError(f"Missing physics configuration: {physics}")
+        from embodied_scene.integrations.isaacsim.config import load_extension
+        extension = load_extension(physics)
         executable = shutil.which(blender or os.environ.get("BLENDER_BIN", "blender"))
         if not executable:
             raise ValueError("Blender not found; set BLENDER_BIN")
@@ -157,7 +174,17 @@ def export_scene(
                     compose_background(stage, spec, specification.resolve().parents[1], exchange)
                 if configure_stage is not None:
                     configure_stage(stage)
-                result = publish_stage(stage, workspace / "exports")
+                from embodied_scene.usd.lighting import configure_environment
+
+                configure_environment(stage, physics.with_name("lighting.yaml"))
+                validator = None
+                if extension is not None:
+                    from embodied_scene.integrations.isaacsim.validation import validate_file
+
+                    def validator(path):
+                        return validate_file(path, extension, mapping)
+
+                result = publish_stage(stage, workspace / "exports", validate_extension=validator)
             finally:
                 if debug:
                     destination = workspace / "build/usd_debug"

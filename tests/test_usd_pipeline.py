@@ -96,6 +96,32 @@ def test_moving_triangle_mesh_rejected(tmp_path):
     assert "convex" in run(tmp_path, spec)["errors"][0]
 
 
+def test_physx_contact_offsets_and_restitution_combine(tmp_path):
+    spec = fixture(tmp_path)
+    spec["materials"]["default"]["restitution_combine_mode"] = "max"
+    collider = spec["bodies"][1]["colliders"][0]
+    collider.update(contact_offset_m=.00015, rest_offset_m=0)
+    assert run(tmp_path, spec)["status"] == "pass"
+    stage = Usd.Stage.Open(str(tmp_path / "scene.usdc"))
+    material = stage.GetPrimAtPath('/World/Physics/Materials/default')
+    assert material.GetAttribute('physxMaterial:restitutionCombineMode').Get() == 'max'
+    mesh = stage.GetPrimAtPath('/World/door/shape')
+    assert abs(mesh.GetAttribute('physxCollision:contactOffset').Get() - .00015) < 1e-9
+    assert 'PhysxCollisionAPI' in mesh.GetMetadata('apiSchemas').GetAppliedItems()
+    collider['rest_offset_m'] = .001
+    assert run(tmp_path, spec)['status'] == 'fail'
+
+
+def test_dynamic_hidden_proxy_remains_pickable(tmp_path):
+    spec = fixture(tmp_path)
+    spec["bodies"][1]["colliders"][0].update(hide_visual=True)
+    assert run(tmp_path, spec)["status"] == "pass"
+    stage = Usd.Stage.Open(str(tmp_path / "scene.usdc"))
+    mesh = stage.GetPrimAtPath('/World/door/shape')
+    assert UsdGeom.Imageable(mesh).ComputeVisibility() == 'inherited'
+    assert UsdGeom.Imageable(mesh).ComputePurpose() == 'guide'
+
+
 def test_mapping_is_recomputed_not_loaded(tmp_path):
     spec = fixture(tmp_path)
     (tmp_path / "object_map.json").write_text('{"objects":{"door":"/BadPath"}}')
@@ -125,7 +151,9 @@ def test_internal_reference_and_decomposition_export(tmp_path):
     stage = Usd.Stage.Open(str(tmp_path / "scene.usdc"))
     collider = stage.GetPrimAtPath(proxy.GetPath())
     assert UsdPhysics.MeshCollisionAPI(collider).GetApproximationAttr().Get() == "convexDecomposition"
-    assert UsdGeom.Imageable(collider).ComputeVisibility() == "invisible"
+    # Moving-body proxies stay visible for direct simulator picking.
+    assert UsdGeom.Imageable(collider).ComputeVisibility() == "inherited"
+    assert UsdGeom.Imageable(collider).ComputePurpose() == "guide"
     assert UsdGeom.Imageable(stage.GetPrimAtPath("/World/door/shape")).ComputeVisibility() == "inherited"
     material, _ = UsdShade.MaterialBindingAPI(collider).ComputeBoundMaterial("physics")
     assert material.GetPrim().HasAPI(UsdPhysics.MaterialAPI)
@@ -142,6 +170,7 @@ def test_internal_reference_and_decomposition_export(tmp_path):
     mesh = stage.GetPrimAtPath("/World/door/shape")
     assert mesh.HasAPI(UsdPhysics.CollisionAPI)
     assert UsdGeom.Imageable(mesh).ComputeVisibility() == "inherited"
+    assert UsdGeom.Imageable(mesh).ComputePurpose() == "default"
 
 
 def test_schema_rejects_negative_mass_and_unknown_keys(tmp_path):

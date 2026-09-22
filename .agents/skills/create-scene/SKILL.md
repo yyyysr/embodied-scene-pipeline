@@ -19,6 +19,8 @@ description: Create or rebuild an embodied-AI Blender scene from a task descript
    or configured FAL editor to create `clean_plate.png`, visually accept it, and
    only then call the World Labs helper. Never overwrite the original reference.
 5. Assign stable semantic identifiers to rooms, surfaces, objects, and task entities.
+   For soft-body or cloth interaction, use `isaacsim-deformables` before modeling;
+   resolve its asset/state contract and optional Isaac Sim specification first.
    Decide which assets must open or expose usable interiors before modeling their
    exterior. Include appliances as well as doors and cabinets; make appearance-only
    simplifications explicit in the scene specification.
@@ -41,6 +43,10 @@ description: Create or rebuild an embodied-AI Blender scene from a task descript
     following the hierarchy and collision selection guidance in `docs/usd-physics.md`.
     Register entities separately from internal geometry references; choose shared
     meshes or dedicated proxies according to contact needs and functional space.
+    Use primitives for simple assets and offline CoACD for ordinary concave assets;
+    prepare triangle sources without visual decorations using `docs/collision-proxies.md`.
+    Mark dedicated proxies with `hide_visual: true` for USD guide representation;
+    shared appearance/collision geometry retains its visual materials and purpose.
 12. Invoke `review-scene` for geometry/visual review, then `export-scene` for final
     USD delivery. The shared run_blender.py command runs build and export together;
     use --geometry-only only when the user requests that boundary.

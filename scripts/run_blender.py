@@ -36,6 +36,8 @@ def main() -> None:
     if not args.geometry_only:
         try:
             validate_specification(physics_path, "physics.schema.json")
+            from embodied_scene.integrations.isaacsim.config import load_extension
+            load_extension(physics_path)
         except Exception as error:  # Report preflight failure before starting Blender.
             update_report(
                 workspace,

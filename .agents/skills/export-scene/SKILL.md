@@ -24,6 +24,16 @@ Use the representation hierarchy and explicit collider visibility defined in
 
 Use the shared entry point:
 
+For `coacd`, follow `docs/collision-proxies.md`. The shared exporter creates explicit
+convex parts; inspect actual parts for task-critical support and openings.
+Dedicated proxies use guide purpose, inherited visibility and physics-only binding;
+shared visual/collision meshes retain appearance. Verify these in the final USD.
+
+When physics.yaml declares extensions.isaacsim, read
+`docs/isaacsim-deformables/README.md` and the matching compatibility guidance.
+The shared entry point authors source-mesh generation recipes for volumes and
+explicit simulation triangles for surfaces, then validates the final USD offline.
+
 ```bash
 .venv/bin/python scripts/export_scene.py workspaces/<id>
 ```

@@ -10,6 +10,9 @@ description: Validate and visually review a generated embodied-AI Blender scene.
    [../create-scene/references/lighting.md](../create-scene/references/lighting.md)
    and generated-asset materials through `docs/generated-assets.md`.
 2. Run deterministic validation and save `review/report.json`.
+   For the Isaac Sim deformable extension, use
+   `docs/isaacsim-deformables/validation.md` to check volume generation declarations,
+   explicit surface topology, material bindings and the corresponding evidence.
 3. Establish overview, top, and task evidence using the removable `__REVIEW__`
    collection. On later iterations, render only views whose evidence is missing
    or invalidated by the changes; reuse inspected, unaffected evidence.
@@ -19,6 +22,10 @@ description: Validate and visually review a generated embodied-AI Blender scene.
    global views.
 5. Check, in order: missing required entities, invalid transforms, task clearances, spatial containment, scale, visibility, geometry defects, and visual quality.
 6. Classify findings as blocking, major, or cosmetic and cite the affected semantic identifiers.
+   Inspect generated convex parts or sections using `docs/collision-proxies.md`;
+   bounds agreement alone does not establish usable free space.
+   Check dedicated proxy guide purpose and physics binding directly in USD, while
+   shared visual/collision meshes retain their intended appearance.
 7. Propose changes to YAML or Blender Python, not opaque manual edits.
 8. Rebuild from source after repairs. Update one review/report.json; retain separate
    iterations only when a concrete comparison needs them.

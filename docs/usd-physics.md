@@ -6,6 +6,13 @@ validation belongs to the user and remains `pending_user` until actually checked
 
 ## Entry points
 
+For optional Isaac Sim soft bodies and cloth, read
+[the deformable extension](isaacsim-deformables/README.md). It has separate
+specification and offline authoring code, sharing units, ownership checks and this
+transactional publisher. Volume assets declare source meshes and generation settings;
+the platform generates their simulation geometry before simulation. Surface assets
+carry explicit triangle simulation meshes. Deformables own their physics hierarchies.
+
 ```bash
 # Build, review, export and author physics in one pipeline:
 .venv/bin/python scripts/run_blender.py workspaces/demo/specs/scene.yaml
@@ -54,7 +61,7 @@ Static architecture and mounted objects receive collision only, no mass.
 Dynamic/kinematic bodies require positive mass_kg. Kinematic motion must be supplied
 by the simulator. Colliders explicitly reference a mesh or a root containing one
 mesh, within their body. `none` triangle meshes are static-only in this pipeline;
-supported dynamic approximations are convexHull, convexDecomposition, boundingCube
+supported dynamic approximations are convexHull, coacd, convexDecomposition, boundingCube
 and boundingSphere. Total mass is configured;
 center of mass and inertia are currently derived by the simulator.
 
@@ -86,21 +93,32 @@ and simulation cost. Collider count follows those requirements.
 | --- | --- |
 | Box-like or spherical objects | boundingCube or boundingSphere on the mesh |
 | Approximately convex movable objects | Shared visual mesh with convexHull |
-| Concave movable objects | convexDecomposition on a suitable mesh |
-| Functional openings, interiors or selected contact regions | Authored compound convex proxies |
-| Complex static surfaces | Triangle mesh with none |
+| Ordinary concave assets, static or moving | Offline coacd on a suitable triangle mesh |
+| Task-critical openings and interiors | Inspect/refine CoACD output or author compound proxies |
+| Fine contact beyond convex approximation | Platform-compatible triangles or SDF |
 
-Convex decomposition requests a set of convex shapes from the simulation backend;
-the exported mesh remains intact. Its suitability for a cavity or contact region
-is assessed during visual and dynamic review. For organic assets, selected contact
-regions can be represented by a few authored proxies. Continuous container shells
-can use decomposition or compound proxies according to the required interior
-surface. Input geometry and approximation are chosen together.
+Use [offline collision proxies](collision-proxies.md) for parameters and inspection.
+`coacd` generates explicit convexHull parts during export; `convexDecomposition`
+retains its platform-side meaning. Static status alone does not justify Triangle
+Mesh. Simple assets use primitives; ordinary concave assets default to CoACD.
 
-Keep visual geometry visible. Dedicated collision proxies use `hide_visual: true`;
-shared visual/collision meshes use `hide_visual: false` (the field default).
-Preview and USD delivery use this explicit setting. A collider's physics material
-describes contact behavior independently of its surface material.
+Dedicated collision proxies use `hide_visual: true`: Blender excludes them from
+appearance previews; USD authors `purpose = guide`, `visibility = inherited` and
+physics-purpose material bindings. This convention applies equally to static,
+dynamic and kinematic bodies. Viewers filter guide geometry from ordinary appearance
+and can enable it for inspection. Physics APIs independently enable collision.
+Shared visual/collision meshes use `hide_visual: false` (the default), retain their
+visual purpose and surface materials, and additionally bind a physics material.
+CoACD-generated parts always use the dedicated guide representation.
+
+For precision fits targeting PhysX, a collider may explicitly set `contact_offset_m`
+and `rest_offset_m` (default 0 when contact is specified). Contact must exceed rest;
+choose the sum of paired offsets below the intended free assembly gap. These map
+to PhysxCollisionAPI without changing the collision geometry. A material may set
+`restitution_combine_mode` to average/min/multiply/max through PhysxMaterialAPI;
+for example a bouncing ball can select max to retain its restitution against a
+low-restitution support. Unspecified settings retain platform defaults. Other
+backends may ignore these explicitly PhysX-specific properties.
 
 SDF is a possible target-specific option for detailed concave contact. The PhysX
 SDF schema requires a separate backend integration and is outside the current
