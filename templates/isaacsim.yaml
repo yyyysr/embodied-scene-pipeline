@@ -1,0 +1,22 @@
+# Copy only when explicitly enabling physics.yaml extensions.isaacsim.
+# Example values are uncalibrated; see docs/isaacsim-deformables/.
+version: 1
+runtime: {profile: isaacsim_6_0, backend: physx}
+scene: {time_steps_per_second: 120}
+materials:
+  soft_sample:
+    youngs_modulus_pa: 100000
+    poissons_ratio: 0.4
+    density_kg_m3: 1000
+    dynamic_friction: 0.5
+    source: Uncalibrated elastic-solid demonstration
+deformables:
+  - id: soft_object
+    object: soft_object
+    kind: volume
+    source_mesh: soft_object_surface
+    material: soft_sample
+    rest_shape: source
+    contact: {rest_offset_m: 0.001, contact_offset_m: 0.003}
+    solver: {position_iterations: 16}
+attachments: []

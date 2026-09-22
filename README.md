@@ -1,5 +1,9 @@
 # Embodied Scene Pipeline
 
+Rigid collision generation supports primitive approximations and offline CoACD
+convex parts. See [collision proxies](docs/collision-proxies.md); install the locked
+Python environment with `uv sync --all-extras`.
+
 Agent-native pipeline for building embodied-AI scenes with Blender. The first milestone accepts a task description, a scene description, and optional reference images; produces structured specifications and Blender Python; renders diagnostic views; and iterates from validation feedback.
 
 ## Current scope
@@ -44,5 +48,11 @@ Or open this repository in Codex and ask:
 > Read AGENTS.md and docs/project-context.md. Create the tabletop example, run validation and diagnostic renders, and report remaining issues.
 
 ## Source of truth
+
+Optional Isaac Sim soft-body and cloth construction is documented in
+[Isaac Sim deformables](docs/isaacsim-deformables/README.md), with two small
+rebuildable examples. Enable it in physics.yaml. Host-side OpenUSD authors materials,
+bind declarations and source-mesh generation settings; the platform generates volume
+meshes before simulation. Final delivery is one scene.usdc plus referenced textures.
 
 User input is immutable evidence. YAML specifications are scene intent. Blender Python is the reproducible implementation. Generated `.blend` files and renders are build products, not the sole source of truth.

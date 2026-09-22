@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "isaacsim.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["version", "runtime", "materials", "deformables"],
+  "properties": {
+    "version": {"const": 1},
+    "runtime": {"type": "object", "additionalProperties": false, "required": ["profile", "backend"], "properties": {
+      "profile": {"enum": ["isaacsim_6_0", "isaacsim_6_1"]}, "backend": {"const": "physx"}
+    }},
+    "scene": {"type": "object", "additionalProperties": false, "properties": {
+      "time_steps_per_second": {"type": "integer", "minimum": 1}
+    }},
+    "materials": {"type": "object", "minProperties": 1, "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/material"}},
+    "deformables": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/body"}},
+    "attachments": {"type": "array", "items": {"$ref": "#/$defs/attachment"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+    "positive": {"type": "number", "exclusiveMinimum": 0},
+    "nonnegative": {"type": "number", "minimum": 0},
+    "vector": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+    "material": {
+      "type": "object", "additionalProperties": false,
+      "required": ["youngs_modulus_pa", "poissons_ratio", "dynamic_friction", "source"],
+      "properties": {
+        "youngs_modulus_pa": {"$ref": "#/$defs/positive"},
+        "poissons_ratio": {"type": "number", "minimum": 0, "exclusiveMaximum": 0.5},
+        "density_kg_m3": {"$ref": "#/$defs/positive"},
+        "dynamic_friction": {"$ref": "#/$defs/nonnegative"},
+        "surface_thickness_m": {"$ref": "#/$defs/positive"},
+        "bend_stiffness_pa": {"oneOf": [{"$ref": "#/$defs/nonnegative"}, {"const": "isotropic_shell"}]},
+        "elasticity_damping_per_s": {"$ref": "#/$defs/nonnegative"},
+        "bend_damping_per_s": {"$ref": "#/$defs/nonnegative"},
+        "source": {"type": "string", "minLength": 1}
+      }
+    },
+    "body": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "object", "kind", "source_mesh", "material", "rest_shape", "contact"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "object": {"$ref": "#/$defs/id"},
+        "kind": {"enum": ["volume", "surface"]}, "source_mesh": {"$ref": "#/$defs/id"},
+        "material": {"$ref": "#/$defs/id"}, "mass_kg": {"$ref": "#/$defs/positive"},
+        "rest_shape": {"const": "source"}, "initial_velocity_m_s": {"$ref": "#/$defs/vector"},
+        "rest_bend": {"enum": ["flatDefault", "restShapeDefault"]},
+        "cooking": {"type": "object", "additionalProperties": false, "properties": {
+          "volume_hex_resolution": {"type": "integer", "minimum": 1, "maximum": 128}
+        }},
+        "contact": {
+          "type": "object", "additionalProperties": false, "required": ["rest_offset_m", "contact_offset_m"],
+          "properties": {
+            "rest_offset_m": {"$ref": "#/$defs/nonnegative"}, "contact_offset_m": {"$ref": "#/$defs/positive"},
+            "self_collision": {"type": "boolean"}, "speculative_ccd": {"type": "boolean"},
+            "self_collision_filter_distance_m": {"oneOf": [{"$ref": "#/$defs/nonnegative"}, {"const": "auto"}]}
+          }
+        },
+        "solver": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "position_iterations": {"type": "integer", "minimum": 1, "maximum": 255},
+            "linear_damping_per_s": {"$ref": "#/$defs/nonnegative"},
+            "settling_damping_per_s": {"$ref": "#/$defs/nonnegative"},
+            "settling_threshold_m_s": {"$ref": "#/$defs/nonnegative"},
+            "sleep_threshold_m_s": {"$ref": "#/$defs/nonnegative"},
+            "max_depenetration_velocity_m_s": {"$ref": "#/$defs/nonnegative"},
+            "max_linear_velocity_m_s": {"oneOf": [{"$ref": "#/$defs/nonnegative"}, {"const": "auto"}]},
+            "collision_pair_update_frequency": {"oneOf": [{"type": "integer", "minimum": 1}, {"const": "auto"}]},
+            "collision_iteration_multiplier": {"type": "integer", "minimum": 1}
+          }
+        }
+      }
+    },
+    "attachment": {
+      "type": "object", "additionalProperties": false, "required": ["id", "body", "target", "region"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "body": {"$ref": "#/$defs/id"}, "target": {"$ref": "#/$defs/id"},
+        "region": {"type": "object", "additionalProperties": false, "required": ["frame", "min", "max"], "properties": {
+          "frame": {"const": "body_local"}, "min": {"$ref": "#/$defs/vector"}, "max": {"$ref": "#/$defs/vector"}
+        }}
+      }
+    }
+  }
+}
