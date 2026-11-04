@@ -25,6 +25,10 @@ carry explicit triangle simulation meshes. Deformables own their physics hierarc
 Set `BLENDER_BIN` to the executable. `run_blender.py --geometry-only` explicitly
 stops before USD delivery. Default builds require a valid neighboring physics.yaml;
 missing physics must not silently produce a supposedly simulation-ready scene.
+Both entry points export cameras by default, including review cameras; pass
+`--exclude-cameras` to omit all cameras. Diagnostic lights remain excluded.
+Orthographic review cameras retain their projection in USD; Blender's native
+exporter writes perspective cameras directly.
 `export_scene.py --blend ... --physics ...` supports an existing prepared scene.
 
 ## Source responsibilities
@@ -44,7 +48,7 @@ missing physics must not silently produce a supposedly simulation-ready scene.
 - Parent each moving part's meshes beneath a single rigid root. Registration adds
   metadata, not parenting. Nested rigid roots are unsupported. Moving roots and
   joint anchors must have unit world scale, no shear/reflection.
-- Keep actual lights outside __REVIEW__. Diagnostics are excluded from delivery.
+- Keep actual lights outside __REVIEW__. Diagnostic lights are excluded from delivery.
   A light existing in USD does not prove adequate brightness or lack of occlusion.
 - Export frame 1 as a static snapshot. Restore complete geometry hidden for cutaway
   review. Procedural Blender shaders may need baking; do not claim visual fidelity

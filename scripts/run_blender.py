@@ -16,6 +16,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build and review a scene with Blender")
     parser.add_argument("scene", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--exclude-cameras", action="store_true", help="Omit all USD cameras")
     parser.add_argument(
         "--geometry-only", action="store_true", help="Explicitly stop after Blender review"
     )
@@ -91,6 +92,7 @@ def main() -> None:
             debug=args.debug,
             blender=str(executable),
             scene_spec=scene_path,
+            export_cameras=not args.exclude_cameras,
         )
         if result["status"] != "pass":
             raise SystemExit("USD delivery failed: " + "; ".join(result["errors"]))

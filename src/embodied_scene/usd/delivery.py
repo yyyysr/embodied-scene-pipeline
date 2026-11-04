@@ -132,7 +132,7 @@ def publish_stage(stage, output: Path, *, validate_extension=None) -> dict:
 
 def export_scene(
     blend: Path, physics: Path, workspace: Path, *, debug=False, blender: str | None = None,
-    configure_stage=None, scene_spec: Path | None = None
+    configure_stage=None, scene_spec: Path | None = None, export_cameras: bool = True,
 ) -> dict:
     workspace = workspace.resolve()
     try:
@@ -159,12 +159,17 @@ def export_scene(
                     str(repository_root() / "blender_runtime/export_usd.py"),
                     "--",
                     str(exchange),
-                ],
+                ] + ([] if export_cameras else ["--exclude-cameras"]),
                 check=True,
             )
             try:
                 mapping = build_object_map(exchange, debug=debug)["objects"]
                 stage = author_stage(physics, exchange, mapping, debug=debug)
+                if export_cameras:
+                    from embodied_scene.usd.cameras import author_orthographic_cameras
+
+                    records = json.loads((exchange / "blender_objects.json").read_text())["objects"]
+                    author_orthographic_cameras(stage, records)
                 from embodied_scene.assembly import compose_background
                 from embodied_scene.specs.validation import validate_specification
 

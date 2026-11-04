@@ -11,6 +11,7 @@ def main():
     parser.add_argument("workspace", type=Path)
     parser.add_argument("--blend", type=Path, help="Defaults to workspace/build/scene.blend")
     parser.add_argument("--physics", type=Path, help="Defaults to workspace/specs/physics.yaml")
+    parser.add_argument("--exclude-cameras", action="store_true", help="Omit all cameras")
     parser.add_argument(
         "--debug", action="store_true", help="Retain temporary USD in build/usd_debug"
     )
@@ -20,6 +21,7 @@ def main():
         args.physics or args.workspace / "specs/physics.yaml",
         args.workspace,
         debug=args.debug,
+        export_cameras=not args.exclude_cameras,
     )
     print(f"USD static checks: {result['status']}; Isaac Sim validation: pending_user")
     for error in result.get("errors", []):

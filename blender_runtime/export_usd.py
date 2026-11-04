@@ -15,6 +15,7 @@ import bpy
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("output", type=Path)
+    parser.add_argument("--exclude-cameras", action="store_true")
     args = parser.parse_args(sys.argv[sys.argv.index("--") + 1 :])
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
@@ -23,8 +24,16 @@ def main():
         raise ValueError("USD export requires Blender scale_length=1 (meters)")
     scene.frame_set(1)
     review = bpy.data.collections.get("__REVIEW__")
-    excluded = set(review.all_objects) if review else set()
+    excluded = {o for o in review.all_objects if o.type != "CAMERA"} if review else set()
+    if args.exclude_cameras:
+        excluded.update(o for o in scene.objects if o.type == "CAMERA")
     objects = [o for o in scene.objects if o not in excluded]
+    bpy.context.view_layer.update()
+    for obj in objects:
+        if obj.parent in excluded and (obj.type == "CAMERA" or obj.parent.type == "CAMERA"):
+            matrix = obj.matrix_world.copy()
+            obj.parent = None
+            obj.matrix_world = matrix
     ids = [
         str(o.get("reference_id") or o.get("semantic_id"))
         for o in objects
@@ -112,6 +121,17 @@ def main():
                 "parent_semantic_id": obj.parent.get("semantic_id") if obj.parent else None,
             }
         )
+        if obj.type == "CAMERA" and obj.data.type == "ORTHO":
+            render = scene.render
+            records[-1]["orthographic_camera"] = {
+                "scale": obj.data.ortho_scale,
+                "shift_x": obj.data.shift_x,
+                "shift_y": obj.data.shift_y,
+                "clip_start": obj.data.clip_start,
+                "clip_end": obj.data.clip_end,
+                "aspect": (render.resolution_x * render.pixel_aspect_x)
+                / (render.resolution_y * render.pixel_aspect_y),
+            }
     bpy.context.view_layer.update()
     depsgraph = bpy.context.evaluated_depsgraph_get()
     for obj, record in zip(objects, records):
