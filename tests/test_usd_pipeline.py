@@ -212,3 +212,13 @@ def test_fixed_joint_and_dynamic_to_dynamic_frames(tmp_path):
     joint = UsdPhysics.FixedJoint.Get(stage, "/World/Physics/Joints/mount")
     assert str(joint.GetBody0Rel().GetTargets()[0]) == "/World/wall"
     assert joint.GetLocalPos0Attr().Get().GetLength() < 1e-5
+
+
+def test_initially_locked_joint_allows_equal_zero_limits(tmp_path):
+    spec = fixture(tmp_path)
+    spec['joints'][0]['limits'] = [0, 0]
+    if 'drive' in spec['joints'][0]:
+        spec['joints'][0]['drive']['target_position'] = 0
+    assert run(tmp_path, spec)['status'] == 'pass'
+    spec['joints'][0]['limits'] = [1, -1]
+    assert run(tmp_path, spec)['status'] == 'fail'

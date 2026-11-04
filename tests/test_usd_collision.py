@@ -57,3 +57,28 @@ def test_generated_proxy_transform_binding_and_transaction(tmp_path):
     assert (out / "scene.usdc").read_bytes() == previous
     final.Reload()
     assert validate_usd(out / "scene.usdc")["status"] == "pass"
+
+
+def test_dedicated_proxy_blocks_weaker_visual_bindings_and_keeps_physics():
+    from pxr import Sdf, UsdShade
+    from embodied_scene.usd.collision import configure_proxy
+
+    weaker = Usd.Stage.CreateInMemory()
+    mesh = UsdGeom.Mesh.Define(weaker, '/World/proxy').GetPrim()
+    paint = UsdShade.Material.Define(weaker, '/World/paint')
+    contact = UsdShade.Material.Define(weaker, '/World/contact')
+    binding = UsdShade.MaterialBindingAPI.Apply(mesh)
+    binding.Bind(paint)
+    binding.Bind(contact, materialPurpose='physics')
+    # Also exercise the collection binding path, which UnbindDirectBinding cannot clear.
+    collection = mesh.CreateRelationship('material:binding:collection:paint')
+    collection.SetTargets(['/World.collection:paint', paint.GetPath()])
+    stronger = Sdf.Layer.CreateAnonymous()
+    stronger.subLayerPaths.append(weaker.GetRootLayer().identifier)
+    stage = Usd.Stage.Open(stronger)
+    proxy = stage.GetPrimAtPath('/World/proxy')
+    configure_proxy(proxy)
+    assert proxy.GetRelationship('material:binding').GetTargets() == []
+    assert proxy.GetRelationship('material:binding:collection:paint').GetTargets() == []
+    assert proxy.GetRelationship('material:binding:physics').GetTargets() == [contact.GetPath()]
+    assert UsdGeom.Imageable(proxy).ComputePurpose() == 'guide'

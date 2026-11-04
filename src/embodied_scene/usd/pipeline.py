@@ -254,8 +254,8 @@ def _author(spec, exports, mapping=None, *, debug=False, extension=None):
                 raise ValueError("Fixed joint cannot have drive, limits or axis")
             continue
         low, high = data["limits"]
-        if low > 0 or high < 0 or low >= high:
-            raise ValueError("Limits must be increasing and contain initial coordinate zero")
+        if low > 0 or high < 0 or low > high:
+            raise ValueError("Limits must be ordered and contain initial coordinate zero")
         joint.CreateAxisAttr(data["axis"])
         joint.CreateLowerLimitAttr(low)
         joint.CreateUpperLimitAttr(high)
@@ -410,7 +410,7 @@ def validate_usd(scene_path: Path):
                     not math.isfinite(low)
                     or not math.isfinite(high)
                     or not low <= 0 <= high
-                    or low >= high
+                    or low > high
                 ):
                     errors.append(f"Invalid limits: {prim.GetPath()}")
     return {

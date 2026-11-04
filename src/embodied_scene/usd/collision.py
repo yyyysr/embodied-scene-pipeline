@@ -17,7 +17,9 @@ def configure_proxy(prim):
         for relationship in child.GetRelationships():
             name = relationship.GetName()
             if name.startswith("material:binding") and "physics" not in name.split(":"):
-                relationship.BlockTargets()
+                # An explicit empty list blocks weaker target opinions as well.
+                # Usd.Relationship has no BlockTargets in supported usd-core.
+                relationship.SetTargets([])
         binding = UsdShade.MaterialBindingAPI.Apply(child)
         for purpose in ("", "preview", "full"):
             binding.UnbindDirectBinding(purpose)
