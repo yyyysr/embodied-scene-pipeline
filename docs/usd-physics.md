@@ -91,20 +91,27 @@ proxies provide independently authored contact geometry where useful.
 ### Choosing collision geometry
 
 Choose geometry according to the required contact surface, functional free space
-and simulation cost. Collider count follows those requirements.
+and simulation cost. Collider count follows those requirements. Unless the user
+specifies otherwise, apply the following defaults:
 
 | Shape and contact needs | Representation |
 | --- | --- |
 | Box-like or spherical objects | boundingCube or boundingSphere on the mesh |
-| Approximately convex movable objects | Shared visual mesh with convexHull |
-| Ordinary concave assets, static or moving | Offline coacd on a suitable triangle mesh |
+| Basic cylinders | Simple convex cylinder mesh with convexHull (no boundingCylinder enum) |
+| Other ordinary assets, convex or concave, static or moving | Offline coacd on a suitable triangle mesh |
 | Task-critical openings and interiors | Inspect/refine CoACD output or author compound proxies |
-| Fine contact beyond convex approximation | Platform-compatible triangles or SDF |
+| Precision fits, e.g. threaded nuts/bolts or tight insertions | Prefer target-specific SDF; requires separate backend integration |
 
 Use [offline collision proxies](collision-proxies.md) for parameters and inspection.
 `coacd` generates explicit convexHull parts during export; `convexDecomposition`
 retains its platform-side meaning. Static status alone does not justify Triangle
-Mesh. Simple assets use primitives; ordinary concave assets default to CoACD.
+Mesh. Basic shapes use simple colliders; other ordinary assets default to CoACD,
+including when contact precision is unspecified or low. If CoACD fails,
+`convexDecomposition` is an allowed fallback without an additional user request.
+Update physics.yaml and record the reason in review/report.json. The exporter
+does not automatically change algorithms at runtime. Fallback geometry must still
+preserve functional space and pass review; refine decomposition or author compound
+proxies when needed. SDF's current implementation limits are described below.
 
 Dedicated collision proxies use `hide_visual: true`: Blender excludes them from
 appearance previews; USD authors `purpose = guide`, `visibility = inherited` and
@@ -124,9 +131,59 @@ for example a bouncing ball can select max to retain its restitution against a
 low-restitution support. Unspecified settings retain platform defaults. Other
 backends may ignore these explicitly PhysX-specific properties.
 
-SDF is a possible target-specific option for detailed concave contact. The PhysX
-SDF schema requires a separate backend integration and is outside the current
-standard-USD configuration supported by this pipeline.
+### SDF intent, USD representation and engine support
+
+SDF is preferred for precision contact where convex approximation would erase
+threads, narrow passages or fitting surfaces. This choice expresses contact needs;
+it does not by itself select PhysX or guarantee that a particular resolution meets
+the task's tolerances.
+
+Keep three layers distinct:
+
+| Layer | Responsibility | Current status |
+| --- | --- | --- |
+| Repository configuration | Express the intended collision method independently of the engine | `sdf` is not yet accepted by physics.yaml's schema |
+| Base OpenUSD physics | Describe portable collision geometry and mesh approximation | No standard SDF collision approximation |
+| Target engine extension | Interpret SDF settings and generate/use collision data | No SDF export mapping implemented in this repository |
+
+Base `UsdPhysics.MeshCollisionAPI` defines `none`, `convexDecomposition`,
+`convexHull`, `boundingSphere`, `boundingCube` and `meshSimplification`.
+It does not define `sdf`. See the
+[OpenUSD API reference](https://openusd.org/dev/api/class_usd_physics_mesh_collision_a_p_i.html).
+The repository supports a subset of these standard options plus its offline
+`coacd` operation, which exports explicit standard convexHull parts. Consequently,
+the repository's configuration values and OpenUSD's standard tokens are not the
+same list.
+
+USD can store an engine-specific `sdf` token, applied API names and custom
+attributes. Storage alone does not give them portable simulation semantics;
+the consuming engine must recognize them. Likewise, OpenUSD's `Sdf` module name
+does not indicate support for signed-distance-field collision.
+
+For a future SDF configuration, the intended design is an engine-independent
+`approximation: sdf` selection with explicit target-backend mapping:
+
+- For Isaac Sim / PhysX, author the target version's SDF collision selection,
+  `PhysxSDFMeshCollisionAPI` and resolution/cooking parameters. The engine can
+  generate the SDF during collision cooking; offline SDF computation in this
+  repository is not a prerequisite. See NVIDIA's
+  [collision guide](https://docs.omniverse.nvidia.com/kit/docs/omni_physics/110.0/dev_guide/rigid_bodies_articulations/collision.html)
+  and [SDF schema reference](https://docs.omniverse.nvidia.com/kit/docs/omni_usd_schema_physics/latest/physxschema/class_physx_schema_physx_s_d_f_mesh_collision_a_p_i.html).
+- For other engines, use their supported SDF extension or import convention;
+  do not assume they understand PhysX attributes.
+- For a base-OpenUSD-only target, report SDF as unsupported rather than claiming
+  a custom token is a portable SDF collider.
+
+This describes the extension boundary, not an implemented YAML option. Until
+schema, authoring and validation support are added, do not write `approximation:
+sdf` into executable physics.yaml or claim that SDF has been exported. Record
+the precision requirement and support gap in scene/task specifications and the
+existing review/report.json. Any alternative representation must be checked
+against the required clearance/contact geometry. Static attribute validation
+cannot establish cooking success, contact accuracy or dynamic stability; those
+remain pending user validation in the target simulator.
+
+### Joints
 
 Fixed, revolute and prismatic joints connect dynamic body1 to optional body0.
 An omitted/static body0 attaches to world. `anchor` supplies the initial world joint

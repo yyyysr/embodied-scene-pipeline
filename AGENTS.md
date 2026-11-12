@@ -53,6 +53,12 @@ Build reproducible Blender scenes for embodied-AI tasks from text and optional r
 - Use a 3D-generation provider for assets whose curved or organic geometry would otherwise be low quality.
 - Use 3DGS only for non-interactive visual context. Never represent collision-critical or manipulable geometry solely as 3DGS.
 - Store dimensions in meters and use Z-up coordinates.
+- Unless the user specifies otherwise, use simple collision shapes for basic
+  geometry (spheres, cylinders, boxes), prefer target-specific SDF for precision
+  fits (such as threaded nuts/bolts and tight insertions), and default to offline
+  `coacd` for other assets, static or moving. SDF requires backend integration;
+  see `docs/usd-physics.md` for current support limits. `convexDecomposition` is
+  an allowed fallback when CoACD fails; record the reason in review/report.json.
 - Define operable assets and their functional interiors before modeling; follow
   create-scene's appliance and initial-lighting guidance. Review with formal
   lighting and follow review-scene's rules for image reuse.

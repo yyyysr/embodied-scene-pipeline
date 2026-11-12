@@ -94,6 +94,7 @@
                   "pattern": "^[a-z][a-z0-9_]*$"
                 },
                 "approximation": {
+                  "description": "Unless the user specifies otherwise, use simple colliders for basic spheres/cylinders/boxes and coacd for other assets. Precision fits prefer target-specific SDF, which requires separate backend integration and is not supported by this enum. convexDecomposition is an allowed fallback if CoACD fails; record the reason in review/report.json.",
                   "enum": [
                     "none",
                     "convexHull",

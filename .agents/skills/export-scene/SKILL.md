@@ -26,6 +26,12 @@ Use the shared entry point:
 
 For `coacd`, follow `docs/collision-proxies.md`. The shared exporter creates explicit
 convex parts; inspect actual parts for task-critical support and openings.
+Unless the user specifies otherwise, use simple collision shapes for basic
+spheres/cylinders/boxes, prefer target-specific SDF for precision fits subject to
+the current integration limits, and default to `coacd` for other assets.
+If CoACD fails, `convexDecomposition` is an allowed fallback; update physics.yaml
+and record the reason in review/report.json. Preserve existing explicit
+configurations when only exporting.
 Dedicated proxies use guide purpose, inherited visibility and physics-only binding;
 shared visual/collision meshes retain appearance. Verify these in the final USD.
 

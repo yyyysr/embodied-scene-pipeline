@@ -43,8 +43,13 @@ description: Create or rebuild an embodied-AI Blender scene from a task descript
     following the hierarchy and collision selection guidance in `docs/usd-physics.md`.
     Register entities separately from internal geometry references; choose shared
     meshes or dedicated proxies according to contact needs and functional space.
-    Use primitives for simple assets and offline CoACD for ordinary concave assets;
-    prepare triangle sources without visual decorations using `docs/collision-proxies.md`.
+    Unless the user specifies otherwise, use simple collision shapes for basic
+    spheres/cylinders/boxes, prefer target-specific SDF for precision fits such as
+    nuts/bolts and tight insertions, and default to offline CoACD for other assets.
+    Respect the current SDF integration limits in `docs/usd-physics.md`.
+    Prepare triangle sources without visual decorations using `docs/collision-proxies.md`.
+    If CoACD fails, `convexDecomposition` is an allowed fallback; update physics.yaml
+    and record the reason in review/report.json rather than silently changing it.
     Mark dedicated proxies with `hide_visual: true` for USD guide representation;
     shared appearance/collision geometry retains its visual materials and purpose.
 12. Invoke `review-scene` for geometry/visual review, then `export-scene` for final

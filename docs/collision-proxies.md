@@ -1,9 +1,24 @@
 # Offline collision proxies
 
-Use primitives for simple rigid shapes, one hull for convex assets, and offline
-CoACD for ordinary concave assets. Refine decomposition or author compound proxies
-when task-critical openings need more control. Target-specific SDF is a possible
-precision alternative, outside the currently implemented configuration.
+Unless the user specifies otherwise, use simple collision shapes for basic spheres,
+cylinders and boxes; prefer target-specific SDF for precision fits such as threaded
+nuts/bolts and tight insertions; default to offline CoACD for other assets, static
+or moving, including ordinary convex assets. SDF requires separate backend
+integration and is outside the currently implemented configuration. A simple convex
+cylinder mesh may use convexHull; there is no boundingCylinder enum in this pipeline.
+See [SDF intent and backend support](usd-physics.md#sdf-intent-usd-representation-and-engine-support)
+for the distinction between configuration intent, base OpenUSD and engine extensions.
+SDF declaration does not require this repository to compute an SDF offline, but
+does require an export mapping recognized by the consuming engine.
+
+If CoACD fails (including unavailable dependencies, timeouts or invalid output),
+`convexDecomposition` is an allowed platform-side fallback. Update physics.yaml
+and record the reason in review/report.json; no additional user request is needed.
+This is a generation/repair decision, not an automatic runtime retry. It must
+still preserve task-critical openings and pass review; otherwise repair the source,
+refine decomposition, author compound proxies or report failure. Do not substitute
+platform-side decomposition upfront simply because contact precision is unspecified
+or low. Existing explicit configurations remain supported without reinterpretation.
 
 ## Configuration
 

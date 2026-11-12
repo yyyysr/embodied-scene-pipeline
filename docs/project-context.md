@@ -38,6 +38,11 @@ bodies, masses, physics materials, and joints in an independent USD layer.
 The pipeline combines layers internally and delivers one `scene.usdc` with referenced
 textures. Intermediates are temporary; one review/report.json summarizes checks.
 No default hash/manifest outputs. Read `docs/usd-physics.md`.
+Collision intent and engine representation are distinct: base OpenUSD has no
+standard SDF collision approximation. A future SDF option needs target-engine
+mapping (PhysX for Isaac Sim, or another engine's extension), not necessarily
+offline SDF generation. The current pipeline does not yet accept or export SDF;
+see the SDF support section in `docs/usd-physics.md`.
 The pipeline performs static checks only. Isaac Sim loading, visual inspection,
 contacts, stability, and dynamic motion are checked by the user; reports record
 `pending_user` until the user supplies independent evidence.

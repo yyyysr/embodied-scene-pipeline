@@ -12,6 +12,9 @@ default_material: default
 # Shared visual/collision meshes remain visible; dedicated proxies set hide_visual: true.
 bodies: []
 # Concave source: {object: plate, approximation: coacd, parameters: {threshold_m: 0.003}}
+# Default: basic shapes use simple colliders; precision fits prefer SDF (requires
+# backend integration); other assets use coacd unless the user specifies otherwise.
+# If CoACD fails, convexDecomposition is allowed; record the reason in review/report.json.
 # Box-like source: {object: tabletop, approximation: boundingCube}
 joints: []
 # Explicitly list semantic roots intended only for appearance.
