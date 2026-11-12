@@ -7,4 +7,13 @@ actor:
 manipulated_objects: []
 goal: Describe the desired final state.
 constraints: []
+# For task-critical openings, declare separate visual and collision checks.
+# Endpoints and radius are world-space meters; keep endpoints outside the solids.
+# passages:
+#   - id: plate_hole_visual
+#     objects: [plate]
+#     representation: visual
+#     start: [0, 0, 0.18]
+#     end: [0, 0, 0.22]
+#     radius_m: 0.01
 

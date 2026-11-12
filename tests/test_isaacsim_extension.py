@@ -270,7 +270,17 @@ def test_shared_export_uses_only_blender_subprocess(config, tmp_path, monkeypatc
         from pathlib import Path
 
         exchange = Path(command[-1])
-        geometry(exchange)
+        stage = geometry(exchange)
+        source = UsdGeom.Mesh.Get(stage, mapping()["soft_object_surface"])
+        source.CreateSubdivisionSchemeAttr("none")
+        stage.GetRootLayer().Save()
+        (exchange / "blender_objects.json").write_text(json.dumps({"objects": []}))
+        import numpy as np
+
+        from embodied_scene.usd.geometry import mesh_triangles
+
+        np.savez_compressed(exchange / "blender_surfaces.npz",
+                            surface_soft_object_surface=mesh_triangles(source.GetPrim()))
 
     monkeypatch.setattr(delivery.shutil, "which", lambda value: "/fake/blender")
     monkeypatch.setattr(delivery.subprocess, "run", export)

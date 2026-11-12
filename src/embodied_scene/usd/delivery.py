@@ -9,7 +9,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from pxr import UsdUtils
+from pxr import Usd, UsdUtils
 
 from embodied_scene.config import repository_root
 from embodied_scene.usd.pipeline import author_stage, build_object_map, validate_usd, write_json
@@ -90,7 +90,7 @@ def flatten_with_assets(stage, directory: Path) -> Path:
     return path
 
 
-def publish_stage(stage, output: Path, *, validate_extension=None) -> dict:
+def publish_stage(stage, output: Path, *, validate_extension=None, validate_geometry=None) -> dict:
     """Validate staged output before replacing a previous managed delivery."""
     output = output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -111,6 +111,13 @@ def publish_stage(stage, output: Path, *, validate_extension=None) -> dict:
         result = validate_usd(path)
         if result["status"] != "pass":
             return result
+        if validate_geometry is not None:
+            geometry = validate_geometry(path)
+            result["geometry"] = geometry
+            if geometry["status"] != "pass":
+                result["status"] = "fail"
+                result["errors"].extend(geometry.get("errors", ["Geometry validation failed"]))
+                return result
         if validate_extension is not None:
             extension = validate_extension(path)
             result["isaacsim"] = extension
@@ -189,7 +196,31 @@ def export_scene(
                     def validator(path):
                         return validate_file(path, extension, mapping)
 
-                result = publish_stage(stage, workspace / "exports", validate_extension=validator)
+                import numpy as np
+
+                from embodied_scene.usd.geometry import validate_passages, validate_surfaces
+
+                task_path = physics.with_name("task.yaml")
+                checks = (validate_specification(task_path, "task.schema.json").get("passages", [])
+                          if task_path.exists() else [])
+                with np.load(exchange / "blender_surfaces.npz", allow_pickle=False) as surfaces:
+                    # Catch exporter differences before physics/background processing can mask them.
+                    validate_surfaces(Usd.Stage.Open(str(exchange / "geometry.usdc")), surfaces)
+
+                    def geometry_validator(path):
+                        try:
+                            final = Usd.Stage.Open(str(path))
+                            fidelity = validate_surfaces(final, surfaces)
+                            passages = validate_passages(final, checks, mapping)
+                            return {"status": "pass", "surface_fidelity": fidelity,
+                                    "passages": passages,
+                                    "task_space_validation": "pass" if checks else "not_evaluated"}
+                        except (ValueError, RuntimeError) as error:
+                            return {"status": "fail", "errors": [str(error)]}
+
+                    result = publish_stage(stage, workspace / "exports",
+                                           validate_extension=validator,
+                                           validate_geometry=geometry_validator)
             finally:
                 if debug:
                     destination = workspace / "build/usd_debug"

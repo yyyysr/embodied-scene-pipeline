@@ -24,6 +24,10 @@ description: Validate and visually review a generated embodied-AI Blender scene.
 6. Classify findings as blocking, major, or cosmetic and cite the affected semantic identifiers.
    Inspect generated convex parts or sections using `docs/collision-proxies.md`;
    bounds agreement alone does not establish usable free space.
+   For Boolean openings, inspect the shared export's surface-fidelity and task.yaml
+   `passages` results. Declare separate checks for visual and collision geometry;
+   inspect final USD hole closeups/sections because Blender previews alone can hide
+   tessellation differences. See `docs/usd-physics.md` for check limitations.
    Check dedicated proxy guide purpose and physics binding directly in USD, while
    shared visual/collision meshes retain their intended appearance.
 7. Propose changes to YAML or Blender Python, not opaque manual edits.

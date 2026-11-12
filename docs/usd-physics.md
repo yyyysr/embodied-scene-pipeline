@@ -244,7 +244,65 @@ leaves the prior successful delivery untouched and updates the summary to failur
 ## Acceptance
 
 Blender geometry/review checks precede export. The export compares evaluated mesh
-bounds and resolves actual semantic paths. The final USD is reopened to check units,
+bounds and resolves actual semantic paths. In the fresh export-only Blender process,
+the shared exporter appends a Triangulate modifier after the existing modifier
+stack and exports evaluated subdivision as explicit geometry. This fixes Boolean
+and other complex polygon tessellation before USD consumers see it. The editable
+scene.blend is not changed. Materials, UVs and normals remain part of native export.
+
+Temporary triangle evidence from the evaluated Blender meshes is compared with
+both the native USD and the final staged delivery before publication. Checks require
+explicit non-degenerate triangles, no subdivision scheme or excluded faces, and
+one-to-one world-space triangle agreement within 0.00001 m, independent of face/
+vertex ordering. This catches missing/extra caps and changed connectivity even
+when bounds agree. It checks exported surface positions, not normal/UV/material
+fidelity, and does not prove the original Boolean result fulfilled the task.
+The temporary evidence is removed after export unless --debug is requested.
+
+### Task-critical openings
+
+Declare optional `passages` in specs/task.yaml for holes and insertion paths:
+
+```yaml
+passages:
+  - id: upper_plate_hole_visual
+    objects: [upper_plate]  # registered entity or internal reference IDs
+    representation: visual
+    start: [0.0, 0.0, 0.18]
+    end: [0.0, 0.0, 0.22]
+    radius_m: 0.01
+  - id: upper_plate_hole_collision
+    objects: [upper_plate]
+    representation: collision
+    start: [0.0, 0.0, 0.18]
+    end: [0.0, 0.0, 0.22]
+    radius_m: 0.01
+```
+
+All coordinates/radii are world-space meters. Each check measures minimum distance
+between a line segment and the selected surfaces; its radius defines a capsule
+(including rounded ends), not just a center ray. Include the required clearance
+in the radius and put endpoints outside the target solids. Closed solids must have
+consistent winding for endpoint-inside detection. Select all relevant obstacles;
+the check does not discover undeclared objects or prove a complete robot trajectory.
+Use separate checks for each board/hole and for visual and collision representations.
+
+Visual checks exclude guide-purpose proxies. Collision checks use enabled mesh
+colliders and reconstruct convexHull surfaces, so a hull closing a visual hole fails.
+CoACD's explicit convexHull parts are supported. Engine-cooked convexDecomposition,
+SDF, bounding approximations and non-mesh colliders cannot currently be certified
+by this check: they fail rather than checking only their uncooked source mesh.
+Use explicit reviewed proxies or perform separate target-engine validation.
+
+The final staged scene.usdc is checked before replacing any prior successful
+delivery; results enter the existing review/report.json under usd.geometry.
+Without declared passages, task-space validation is recorded as not_evaluated.
+For Boolean holes, inspect final USD closeups/sections in addition to these checks;
+Blender preview evidence alone does not establish exported hole preservation.
+
+### Remaining USD checks
+
+The final USD is reopened to check units,
 mesh topology, hierarchy, masses, material bindings, joint targets and initial frames,
 limits and missing resources. Results are merged into review/report.json without
 hashes or repeated scene data. The build fails if checks fail.

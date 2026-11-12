@@ -13,6 +13,11 @@ in [../create-scene/references/lighting.md](../create-scene/references/lighting.
 Check source readiness: stable entity/reference IDs, complete body membership, useful joint
 frames, cavity-preserving collisions, and actual lights outside __REVIEW__. Repair
 source or configuration if missing; do not invent a parallel JSON scene description.
+The shared exporter triangulates evaluated meshes in its export-only process and
+checks triangle-surface fidelity against final USD. Do not rely on bounds alone or
+add per-case exporters to work around Boolean tessellation. For task-critical holes,
+declare visual and collision `passages` in task.yaml using `docs/usd-physics.md`;
+inspect final USD opening evidence as well as Blender previews.
 Opening an asset must already reveal its intended functional interior in Blender;
 adding a joint downstream cannot repair a solid or incorrectly modeled body.
 Map the resolved surface materials and target-renderer light settings into USD.

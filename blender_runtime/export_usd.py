@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 import bpy
+import numpy as np
 
 
 def main():
@@ -133,18 +134,33 @@ def main():
                 / (render.resolution_y * render.pixel_aspect_y),
             }
     bpy.context.view_layer.update()
+    # Export-only final modifier: Boolean/bevel/subdivision results must not be
+    # tessellated independently by downstream USD consumers. Never save this file.
+    for obj in objects:
+        if obj.type == "MESH":
+            modifier = obj.modifiers.new("__USD_TRIANGULATE__", "TRIANGULATE")
+            modifier.keep_custom_normals = True
+    bpy.context.view_layer.update()
     depsgraph = bpy.context.evaluated_depsgraph_get()
+    surfaces = {}
     for obj, record in zip(objects, records):
         if obj.type == "MESH":
             evaluated = obj.evaluated_get(depsgraph)
             mesh = evaluated.to_mesh()
             points = [evaluated.matrix_world @ v.co for v in mesh.vertices]
+            if any(len(p.vertices) != 3 for p in mesh.polygons):
+                raise ValueError(f"Export mesh was not triangulated: {obj.name}")
+            vertices = np.asarray(points, dtype=np.float64).reshape(-1, 3)
+            indices = np.asarray([list(p.vertices) for p in mesh.polygons], dtype=np.int64)
+            surfaces["surface_" + obj.name] = vertices[indices.reshape(-1, 3)]
             if points:
                 record["world_bounds"] = [
                     [min(p[i] for p in points) for i in range(3)],
                     [max(p[i] for p in points) for i in range(3)],
                 ]
             evaluated.to_mesh_clear()
+    # Temporary exchange evidence, removed with the shared export directory.
+    np.savez_compressed(output / "blender_surfaces.npz", **surfaces)
     properties = bpy.ops.wm.usd_export.get_rna_type().properties
     options = {
         "filepath": str(output / "geometry.usdc"),
@@ -157,6 +173,7 @@ def main():
         "relative_paths": True,
         "use_instancing": False,
         "evaluation_mode": "VIEWPORT",
+        "export_subdivision": "TESSELLATE",
     }
     if "export_textures_mode" in properties:
         options["export_textures_mode"] = "NEW"

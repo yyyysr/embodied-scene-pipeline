@@ -56,6 +56,11 @@ description: Create or rebuild an embodied-AI Blender scene from a task descript
     USD delivery. The shared run_blender.py command runs build and export together;
     use --geometry-only only when the user requests that boundary.
 
+For task-critical Boolean holes or insertion paths, declare visual and collision
+`passages` in task.yaml using `docs/usd-physics.md`. The shared exporter triangulates
+evaluated geometry without changing the editable source; verify the modeled holes
+before export and their final USD surfaces after export.
+
 Keep diagnostic cameras and lights separate from final scene lighting. Never make generated `.blend` state the only copy of an accepted modeling decision.
 
 Author review entry points with explicit view/asset selection and a build-only
